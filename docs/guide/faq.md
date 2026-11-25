@@ -52,5 +52,5 @@ QQ 网关（SnowLuma）和翻唱（RVC）支持最好；Linux 接自己的 OneBo
 
 ## 文档有错 / 想加内容
 
-每页右上角有「在 GitHub 上编辑此页」，直接改 `docs` 分支；或者去
+每页右上角有「在 GitHub 上编辑此页」，直接改文档仓库的 `main` 分支；或者去
 [市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/issues) 提 Issue。
