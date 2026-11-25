@@ -109,7 +109,7 @@ export const config = Schema.object({
 | `ctx.command()` | 注册指令：在中间件之前匹配，用户直接触发，不必等模型决定；执行结果照常回写上下文，AI 知道发过什么 |
 | `ctx.tool()` | 注册给 AI 调用的工具；用户不能直接调，必须由模型决定调用并传参 |
 | `ctx.middleware()` | 注册消息中间件 |
-| `ctx.server` | HTTP 服务：`get` / `post`，给面板 `call()` 取数据；就是 Koishi 那个 `ctx.server`，不另造路由 |
+| `ctx.server` | HTTP 服务：`get` / `post` / `put` / `patch` / `delete` / `head` / `options` / `all`，给面板 `call()` 取数据；就是 Koishi 那个 `ctx.server`，不另造路由 |
 | `ctx.on()` / `ctx.emit()` | 监听 / 触发事件。宿主内置事件按白名单暴露；插件之间可以自定义事件名互发 |
 | `ctx.setInterval()` / `ctx.setTimeout()` | 定时器，注册进当前插件的 effect 作用域；卸载时由宿主统一回收（cordis 式生命周期，作者不用手写 `clearInterval`） |
 | `ctx.bots` | bot 列表：`ctx.bots[0]`；按 id 取用 `ctx.bots('1787850032')` |
