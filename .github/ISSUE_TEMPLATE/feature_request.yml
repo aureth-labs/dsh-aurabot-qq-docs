@@ -1,0 +1,42 @@
+name: Feature
+description: 缺一页教程、某段讲得不清楚、想要新的示例
+title: "[Feature] "
+assignees: ["shangxueink"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提需求前先说清楚**你想完成什么**，比说「建议加一节」有用得多。
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: 你想完成什么
+      description: 卡在哪一步，想找什么答案
+      placeholder: 我想让机器人只在一个群里说话，但没找到白名单在哪配
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望文档怎么改
+      description: 加一页、补一段、换个例子都行
+    validations:
+      required: false
+
+  - type: input
+    id: related
+    attributes:
+      label: 相关页面
+      description: 有的话填地址
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我在现有文档里搜过，确实没有这块内容
+          required: false

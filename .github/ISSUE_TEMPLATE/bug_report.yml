@@ -1,0 +1,45 @@
+name: Bug
+description: 文档写错了、命令照抄跑不通、页面渲染坏了
+title: "[Bug] "
+assignees: ["shangxueink"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        这一栏只处理**本站文档**的问题。框架或插件本身的问题，请提到对应仓库，那边才有代码。
+
+  - type: input
+    id: page
+    attributes:
+      label: 哪一页
+      description: 页面地址，或者文章标题
+      placeholder: https://aureth-labs.github.io/dsh-aurabot-qq-docs/guide/prepare
+    validations:
+      required: true
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 哪里不对
+      description: 现在看到的是什么，应该是什么
+      placeholder: |
+        现在：`npm run check` 报 command not found
+        应该：文档里写的是 pnpm，命令和包管理器不一致
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充
+      description: 截图、报错原文、系统和版本，有就贴
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 这不是框架或插件的问题，只是文档不对
+          required: true

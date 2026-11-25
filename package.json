@@ -2,6 +2,7 @@
   "name": "dsh-aurabot-qq-docs",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "description": "AuraBot 文档站（VitePress）",
   "packageManager": "pnpm@11.1.2",
   "scripts": {
