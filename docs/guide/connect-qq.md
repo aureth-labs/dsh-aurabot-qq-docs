@@ -3,7 +3,7 @@
 AuraBot 不直接和腾讯的服务器打交道，它连的是一个 **OneBot v11 网关**。
 网关负责让机器人号上线，插件只负责「收到消息 → 想 → 发回去」。
 
-```
+```text
 QQ ⇄ 网关（SnowLuma / NapCat / LLOneBot / Lagrange）⇄ AuraBot ⇄ DSH 会话
 ```
 

@@ -3,7 +3,7 @@
 一个插件就是一个目录，目录里最小只需要两样东西：`package.json` 和编译后的入口。
 我们推荐的结构是：
 
-```
+```text
 my-plugin/
 ├── package.json          ← 唯一的清单，市场也读它
 ├── tsconfig.json         ← 后台编译：src/ → lib/
@@ -122,7 +122,7 @@ export default {
 
 可以，而且推荐 —— 星数能互相带动。约定很简单：
 
-```
+```text
 repo/
 ├── modules/
 │   ├── ping/      ← 一个插件一个目录，各有自己的 package.json

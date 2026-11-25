@@ -12,7 +12,7 @@
 
 ## 数据流
 
-```
+```text
 作者仓库 push
    └─ Actions：npm ci → build → 打 zip → 发 Release
         └─ 回写 package.json.aurabot.artifact{url,sha256,size}（bot commit，[skip ci]）

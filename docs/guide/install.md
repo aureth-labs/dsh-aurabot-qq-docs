@@ -19,7 +19,7 @@ AuraBot 不是一个独立程序，它是 **DeepSeek Harness（简称 DSH）** �
 从 [DeepSeek Harness 仓库](https://github.com/deepseek-ai/deepseek-harness/releases) 下载 Windows 安装包，
 装完直接打开。桌面版的命令行藏在：
 
-```
+```text
 %LOCALAPPDATA%\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd
 ```
 
@@ -55,7 +55,7 @@ pnpm dsh web
 ## 下一步
 
 - 配模型：[配置模型](/guide/models)
-- 装插件：[安装插件](/guide/install-plugin)
+- 装本体：[安装 AuraBot](/guide/install-aurabot)
 - 接 QQ：[接入 QQ](/guide/connect-qq)
 
 ::: tip 版本提示

@@ -1,140 +1,149 @@
 /*
- * 粉白 · 扁平 · 二次元
+ * 天青 · 薄荷 · 扁平 · 二次元
  * 只覆盖变量与外观，不改编排；明暗切换沿用 VitePress 自带的那套。
+ *
+ * 主色取 NapCat 那一脉的天青，副色取一点薄荷绿，阴影一律压到最轻，
+ * 靠圆角、细边和留白做层次，不靠投影。
  */
 
 :root {
   --ab-radius: 16px;
   --ab-radius-sm: 10px;
 
-  --vp-c-brand-1: #d9488a;
-  --vp-c-brand-2: #ec5f9c;
-  --vp-c-brand-3: #f9a8d4;
-  --vp-c-brand-soft: rgba(236, 95, 156, 0.12);
+  --vp-c-brand-1: #0b7bbf;
+  --vp-c-brand-2: #17a8e5;
+  --vp-c-brand-3: #8fdcff;
+  --vp-c-brand-soft: rgba(23, 168, 229, 0.1);
 
-  --vp-c-bg: #fffafc;
-  --vp-c-bg-alt: #fff2f8;
-  --vp-c-bg-soft: #fff5fa;
+  --ab-mint: #35c8a8;
+  --ab-violet: #8b7bf7;
+
+  --vp-c-bg: #f7fbfe;
+  --vp-c-bg-alt: #ecf6fd;
+  --vp-c-bg-soft: #f1f9fe;
   --vp-c-bg-elv: #ffffff;
 
-  --vp-c-text-1: #3d2b36;
-  --vp-c-text-2: #6b5563;
-  --vp-c-text-3: #9c8492;
+  --vp-c-text-1: #16232e;
+  --vp-c-text-2: #4d6070;
+  --vp-c-text-3: #8298a8;
 
-  --vp-c-divider: #ffe3f0;
-  --vp-c-border: #ffd7e8;
-  --vp-c-gutter: #ffeef6;
+  --vp-c-divider: #dcebf6;
+  --vp-c-border: #d2e5f2;
+  --vp-c-gutter: #eaf5fc;
 
-  --vp-code-block-bg: #fff4f9;
-  --vp-code-line-highlight-color: rgba(236, 95, 156, 0.1);
+  --vp-code-block-bg: #f2f9fe;
+  --vp-code-line-highlight-color: rgba(23, 168, 229, 0.09);
   --vp-code-copy-code-bg: rgba(255, 255, 255, 0.72);
   --vp-code-copy-code-hover-bg: #ffffff;
 
   --vp-button-brand-border: transparent;
   --vp-button-brand-text: #ffffff;
-  --vp-button-brand-bg: #ec5f9c;
+  --vp-button-brand-bg: #17a8e5;
   --vp-button-brand-hover-border: transparent;
   --vp-button-brand-hover-text: #ffffff;
-  --vp-button-brand-hover-bg: #f472b6;
+  --vp-button-brand-hover-bg: #38bdf8;
   --vp-button-brand-active-border: transparent;
   --vp-button-brand-active-text: #ffffff;
-  --vp-button-brand-active-bg: #d9488a;
+  --vp-button-brand-active-bg: #0b7bbf;
 
-  --vp-button-alt-border: #ffd7e8;
-  --vp-button-alt-text: #6b5563;
+  --vp-button-alt-border: #d2e5f2;
+  --vp-button-alt-text: #4d6070;
   --vp-button-alt-bg: #ffffff;
-  --vp-button-alt-hover-border: #f9a8d4;
-  --vp-button-alt-hover-text: #d9488a;
-  --vp-button-alt-hover-bg: #fff5fa;
+  --vp-button-alt-hover-border: #8fdcff;
+  --vp-button-alt-hover-text: #0b7bbf;
+  --vp-button-alt-hover-bg: #f1f9fe;
 
   --vp-home-hero-name-color: transparent;
-  --vp-home-hero-name-background: linear-gradient(120deg, #ff8fc0 0%, #c4a7ff 100%);
-  --vp-home-hero-image-background-image: linear-gradient(-45deg, #ffc2dd 50%, #d8c6ff 50%);
+  --vp-home-hero-name-background: linear-gradient(120deg, #38bdf8 0%, #8b7bf7 100%);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #b6ecff 50%, #c9c2ff 50%);
   --vp-home-hero-image-filter: blur(52px);
 
-  --vp-custom-block-tip-border: #ffd0e5;
-  --vp-custom-block-tip-bg: #fff2f8;
-  --vp-custom-block-tip-text: #6b5563;
-  --vp-custom-block-info-border: #e3d5ff;
-  --vp-custom-block-info-bg: #f7f2ff;
-  --vp-custom-block-warning-border: #ffe0a3;
-  --vp-custom-block-warning-bg: #fff9ec;
-  --vp-custom-block-danger-border: #ffc9d4;
-  --vp-custom-block-danger-bg: #fff2f5;
-  --vp-custom-block-important-border: #d9ccff;
-  --vp-custom-block-important-bg: #f8f4ff;
+  --vp-custom-block-tip-border: #b7e6f9;
+  --vp-custom-block-tip-bg: #eff9fe;
+  --vp-custom-block-tip-text: #4d6070;
+  --vp-custom-block-info-border: #d3cdfb;
+  --vp-custom-block-info-bg: #f4f2ff;
+  --vp-custom-block-warning-border: #f5dfa6;
+  --vp-custom-block-warning-bg: #fdf8ea;
+  --vp-custom-block-danger-border: #f6c2c8;
+  --vp-custom-block-danger-bg: #fdf1f2;
+  --vp-custom-block-important-border: #c6c3fb;
+  --vp-custom-block-important-bg: #f5f3ff;
 
   --vp-font-family-base: 'Inter', 'PingFang SC', 'HarmonyOS Sans SC', 'MiSans',
     'Microsoft YaHei', system-ui, -apple-system, sans-serif;
   --vp-font-family-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo,
     Consolas, monospace;
 
-  --vp-nav-bg-color: rgba(255, 250, 252, 0.82);
-  --vp-sidebar-bg-color: #fff2f8;
+  --vp-nav-bg-color: rgba(247, 251, 254, 0.84);
+  --vp-sidebar-bg-color: #f0f8fd;
   --vp-local-search-bg: #ffffff;
 }
 
 .dark {
-  --vp-c-brand-1: #ffa8d2;
-  --vp-c-brand-2: #f472b6;
-  --vp-c-brand-3: #c8508a;
-  --vp-c-brand-soft: rgba(255, 143, 192, 0.14);
+  --vp-c-brand-1: #7dd6ff;
+  --vp-c-brand-2: #38bdf8;
+  --vp-c-brand-3: #0e6d95;
+  --vp-c-brand-soft: rgba(56, 189, 248, 0.13);
 
-  --vp-c-bg: #171220;
-  --vp-c-bg-alt: #1e1728;
-  --vp-c-bg-soft: #241b2f;
-  --vp-c-bg-elv: #221a2b;
+  --ab-mint: #4ee0bf;
+  --ab-violet: #a99cfb;
 
-  --vp-c-text-1: #f6e9f3;
-  --vp-c-text-2: #cbb4c6;
-  --vp-c-text-3: #9b8399;
+  --vp-c-bg: #0d151c;
+  --vp-c-bg-alt: #111c24;
+  --vp-c-bg-soft: #14222c;
+  --vp-c-bg-elv: #13202a;
 
-  --vp-c-divider: #352a42;
-  --vp-c-border: #3b2e4a;
-  --vp-c-gutter: #120d18;
+  --vp-c-text-1: #e8f2f8;
+  --vp-c-text-2: #a8bfcd;
+  --vp-c-text-3: #7b93a3;
 
-  --vp-code-block-bg: #201828;
-  --vp-code-line-highlight-color: rgba(255, 143, 192, 0.12);
+  --vp-c-divider: #1d2f3b;
+  --vp-c-border: #233543;
+  --vp-c-gutter: #0a1118;
+
+  --vp-code-block-bg: #111d26;
+  --vp-code-line-highlight-color: rgba(56, 189, 248, 0.12);
   --vp-code-copy-code-bg: rgba(255, 255, 255, 0.06);
   --vp-code-copy-code-hover-bg: rgba(255, 255, 255, 0.12);
 
-  --vp-button-alt-border: #3b2e4a;
-  --vp-button-alt-text: #cbb4c6;
-  --vp-button-alt-bg: #221a2b;
-  --vp-button-alt-hover-border: #c8508a;
-  --vp-button-alt-hover-text: #ffa8d2;
-  --vp-button-alt-hover-bg: #241b2f;
+  --vp-button-alt-border: #233543;
+  --vp-button-alt-text: #a8bfcd;
+  --vp-button-alt-bg: #13202a;
+  --vp-button-alt-hover-border: #0e6d95;
+  --vp-button-alt-hover-text: #7dd6ff;
+  --vp-button-alt-hover-bg: #14222c;
 
-  --vp-custom-block-tip-border: #4a2f45;
-  --vp-custom-block-tip-bg: #241a28;
-  --vp-custom-block-tip-text: #cbb4c6;
-  --vp-custom-block-info-border: #3a3155;
-  --vp-custom-block-info-bg: #201b2e;
-  --vp-custom-block-warning-border: #4d3d24;
-  --vp-custom-block-warning-bg: #241f16;
-  --vp-custom-block-danger-border: #4f2a34;
-  --vp-custom-block-danger-bg: #261a1e;
-  --vp-custom-block-important-border: #3d3358;
-  --vp-custom-block-important-bg: #211b2e;
+  --vp-custom-block-tip-border: #1d4356;
+  --vp-custom-block-tip-bg: #10212b;
+  --vp-custom-block-tip-text: #a8bfcd;
+  --vp-custom-block-info-border: #2f2a55;
+  --vp-custom-block-info-bg: #15132a;
+  --vp-custom-block-warning-border: #4a3d22;
+  --vp-custom-block-warning-bg: #1f1a12;
+  --vp-custom-block-danger-border: #4a2730;
+  --vp-custom-block-danger-bg: #201418;
+  --vp-custom-block-important-border: #33305c;
+  --vp-custom-block-important-bg: #16142b;
 
-  --vp-nav-bg-color: rgba(23, 18, 32, 0.82);
-  --vp-sidebar-bg-color: #1e1728;
-  --vp-local-search-bg: #221a2b;
+  --vp-nav-bg-color: rgba(13, 21, 28, 0.84);
+  --vp-sidebar-bg-color: #101a22;
+  --vp-local-search-bg: #13202a;
 }
 
 /* ── 底色：一层很淡的点阵，只在留白处看得见 ── */
 
 body {
-  background-image: radial-gradient(rgba(236, 95, 156, 0.08) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(23, 168, 229, 0.07) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
 .dark body {
-  background-image: radial-gradient(rgba(255, 143, 192, 0.07) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(56, 189, 248, 0.06) 1px, transparent 1px);
 }
 
 ::selection {
-  background: rgba(244, 114, 182, 0.32);
+  background: rgba(56, 189, 248, 0.28);
 }
 
 ::-webkit-scrollbar {
@@ -173,7 +182,7 @@ body {
   color: var(--vp-c-brand-1);
 }
 
-/* ── 侧栏：圆角条目、粉色选中态 ── */
+/* ── 侧栏：圆角条目、天青选中态 ── */
 
 .VPSidebar {
   border-right: 1px solid var(--vp-c-divider);
@@ -199,18 +208,18 @@ body {
   color: var(--vp-c-text-1);
 }
 
-/* ── 首页：渐变标题 + 两团柔光 ── */
+/* ── 首页：渐变标题 + 天青/薄荷两团柔光 ── */
 
 .VPHero {
   background:
-    radial-gradient(560px 300px at 16% 8%, rgba(255, 182, 213, 0.42), transparent 70%),
-    radial-gradient(520px 320px at 84% 4%, rgba(196, 167, 255, 0.32), transparent 70%);
+    radial-gradient(560px 300px at 16% 8%, rgba(182, 236, 255, 0.5), transparent 70%),
+    radial-gradient(520px 320px at 84% 4%, rgba(120, 232, 205, 0.34), transparent 70%);
 }
 
 .dark .VPHero {
   background:
-    radial-gradient(560px 300px at 16% 8%, rgba(255, 143, 192, 0.16), transparent 70%),
-    radial-gradient(520px 320px at 84% 4%, rgba(160, 130, 255, 0.14), transparent 70%);
+    radial-gradient(560px 300px at 16% 8%, rgba(56, 189, 248, 0.16), transparent 70%),
+    radial-gradient(520px 320px at 84% 4%, rgba(78, 224, 191, 0.13), transparent 70%);
 }
 
 .VPHero .name .clip {
@@ -250,7 +259,7 @@ body {
   background: var(--vp-c-brand-soft);
 }
 
-/* ── 正文：标题前的粉色小圆点、链接下划线走粉 ── */
+/* ── 正文：标题前的天青小圆点、链接下划线走天青 ── */
 
 .vp-doc h2 {
   border-top: 1px solid var(--vp-c-divider);
@@ -276,7 +285,7 @@ body {
   color: var(--vp-c-brand-1);
 }
 
-/* ── 表格：粉色表头，圆角边框 ── */
+/* ── 表格：天青表头，圆角边框 ── */
 
 .vp-doc table {
   display: table;
@@ -307,7 +316,7 @@ body {
   border-bottom: none;
 }
 
-/* ── 代码：圆角 + 细边，行内代码走粉色 ── */
+/* ── 代码：圆角 + 细边，行内代码走天青 ── */
 
 div[class*='language-'] {
   border: 1px solid var(--vp-c-divider);
@@ -331,7 +340,7 @@ div[class*='language-'] > span.lang {
   content: '';
 }
 
-/* ── 提示块：粉/紫/黄/红四色，圆角扁平 ── */
+/* ── 提示块：天青 / 淡紫 / 暖黄 / 珊瑚四色，圆角扁平 ── */
 
 .custom-block {
   border-width: 1px;

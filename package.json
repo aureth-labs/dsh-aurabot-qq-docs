@@ -2,7 +2,7 @@
   "name": "dsh-aurabot-qq-docs",
   "private": true,
   "version": "1.0.0",
-  "description": "AuraBot 插件市场文档站（VitePress）",
+  "description": "AuraBot 文档站（VitePress）",
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

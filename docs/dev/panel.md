@@ -2,7 +2,7 @@
 
 面板是插件在 DSH Web UI 里的那一页。它和后台逻辑**分开编译、分开加载**。
 
-```
+```text
 client/panel.ts  ──tsc──▶  dist/panel.js  ──宿主 new Function()──▶  面板
 src/index.ts     ──tsc──▶  lib/index.js    ──宿主 import──▶        后台
 ```

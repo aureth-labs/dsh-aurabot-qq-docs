@@ -21,7 +21,7 @@ npm run build     # src/ → lib/，client/ → dist/
 
 ## 发版流程
 
-```
+```text
 改代码 + 升 version
    └─ push 到 main
         └─ Actions：npm ci → check → build → 打 zip → 发 Release

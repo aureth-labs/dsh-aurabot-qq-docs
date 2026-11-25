@@ -111,7 +111,7 @@ push 到默认分支。Actions 发现版本变了就打包发 Release，并把 `
 
 在市场仓库的 `registry.jsonl` 加一行，就是你浏览器里那个文件的地址：
 
-```
+```text
 https://github.com/<你>/<仓库>/blob/main/modules/voice-song/package.json
 ```
 

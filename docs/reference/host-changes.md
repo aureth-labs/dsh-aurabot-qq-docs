@@ -4,7 +4,7 @@
 > 市场这边只产出 `market.json` 和规范；下面每一条都要宿主动手改。
 > 原则：新格式（`package.json` + `lib/`）和老格式（`module.json` + `index.mjs`）**并存**，老模块不改也能继续装。
 
-相关：插件写法本身的改造（ctx / schema / 元素 / 消息管线）见 [插件接口 v2](/PLUGIN-API-V2)。
+相关：插件写法本身的改造（ctx / schema / 元素 / 消息管线）见 [插件接口 v2](/reference/plugin-api)。
 
 ## 0. 一句话
 

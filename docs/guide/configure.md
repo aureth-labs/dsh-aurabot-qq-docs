@@ -36,7 +36,7 @@
 
 ## 数据在哪
 
-```
+```text
 %USERPROFILE%\.dsh\plugins-data\aurabot\
 ```
 
@@ -67,3 +67,17 @@
 模块和插件在同一个进程里跑，能碰到账号配置。安装时显示的能力只是**声明**。
 只装信得过的模块。
 :::
+
+## 接下来配什么
+
+面板认路之后，按需要挑：
+
+| 想让她 | 去这一页 |
+| --- | --- |
+| 发图 | [画图](/features/image) |
+| 说话 | [语音](/features/voice) |
+| 换一个嗓子 | [TTS](/features/tts) |
+| 唱歌 | [翻唱](/features/cover) |
+| 甩歌过来 | [点歌](/features/music) |
+
+装模块的统一入口还是「模块市场」，见[装社区模块](/guide/install-plugin)。
