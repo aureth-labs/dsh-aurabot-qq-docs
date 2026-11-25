@@ -89,7 +89,7 @@ repo/
 | 指向 | 写法 | 例子 |
 | --- | --- | --- |
 | 站内页面 | 以 `/` 开头，不带 base 前缀 | `/guide/install` |
-| `public/` 里的静态文件 | **绝对地址** | `https://aureth-labs.github.io/dsh-aurabot-qq-market-dev/llms.txt` |
+| `public/` 里的静态文件 | **绝对地址** | `https://aureth-labs.github.io/dsh-aurabot-qq-docs/llms.txt` |
 
 第二条是踩过的坑：VitePress 只给页面补 `base`，`public/llms.txt` 是原样拷贝的静态文件，
 写 `/llms.txt` 会跳到域名根目录，线上就是 404。

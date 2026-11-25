@@ -39,4 +39,4 @@ AuraBot 的插件市场**不托管代码**。它只做三件事：
 - 想看取舍：[架构与决策](/ARCHITECTURE)
 - 想改宿主：[主框架改造清单](/HOST-CHANGES)
 - 想收录自己的插件：在[市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev)的 `registry.jsonl` 里加一行，提 PR
-- 文档有错 / 想加内容：直接改 [`docs` 分支](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/tree/docs) 下对应页面，每页右上角有「在 GitHub 上编辑此页」
+- 文档有错 / 想加内容：直接改[文档仓库](https://github.com/aureth-labs/dsh-aurabot-qq-docs)里对应的页面，每页右上角有「在 GitHub 上编辑此页」

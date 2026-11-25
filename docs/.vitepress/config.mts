@@ -1,15 +1,15 @@
 import { defineConfig } from 'vitepress'
 
-// 站点本身挂在 https://aureth-labs.github.io/dsh-aurabot-qq-market-dev/ 下，
+// 站点本身挂在 https://aureth-labs.github.io/dsh-aurabot-qq-docs/ 下，
 // 而 llms.txt 是 public/ 里的静态文件，VitePress 不会给它补 base 前缀，
 // 所以这类「非页面」链接一律写绝对地址，不用相对路径。
-const SITE = 'https://aureth-labs.github.io/dsh-aurabot-qq-market-dev'
+const SITE = 'https://aureth-labs.github.io/dsh-aurabot-qq-docs'
 
 export default defineConfig({
   lang: 'zh-CN',
   title: 'AuraBot 插件市场',
   description: '插件索引、构建约定与作者接入指南',
-  base: '/dsh-aurabot-qq-market-dev/',
+  base: '/dsh-aurabot-qq-docs/',
   cleanUrls: true,
   lastUpdated: true,
 
@@ -105,12 +105,12 @@ export default defineConfig({
       ],
     },
 
-    socialLinks: [{ icon: 'github', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-docs' }],
 
     search: { provider: 'local' },
 
     editLink: {
-      pattern: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/edit/docs/docs/:path',
+      pattern: 'https://github.com/aureth-labs/dsh-aurabot-qq-docs/edit/main/docs/:path',
       text: '在 GitHub 上编辑此页',
     },
 

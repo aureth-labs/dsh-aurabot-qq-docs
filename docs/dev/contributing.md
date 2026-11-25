@@ -1,13 +1,14 @@
 # 贡献指南
 
-这套东西有三个仓库，改哪个、走什么流程，先分清楚。
+这套东西有四个仓库，改哪个、走什么流程，先分清楚。
 
-## 三个仓库分别收什么
+## 四个仓库分别收什么
 
 | 仓库 | 收什么 | 怎么提 |
 | --- | --- | --- |
-| [市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev) | 收录表、构建器、文档源码 | 改 `main`（代码）或 `docs`（文档）提 PR |
-| [模板仓库](https://github.com/shangxueink/dsh-aurabot-qq-plugins-template) | 插件模板、Actions、发版脚本 | fork 或用「Use this template」开自己的仓库 |
+| [文档仓库](https://github.com/aureth-labs/dsh-aurabot-qq-docs) | 文档站源码 | 改 `main` 提 PR |
+| [市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev) | 收录表、构建器 | 改 `main` 提 PR |
+| [模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template) | 插件模板、Actions、发版脚本 | fork 或用「Use this template」开自己的仓库 |
 | [示例插件仓库](https://github.com/shangxueink/dsh-aurabot-qq-market-dev-plugins) | 两个能跑的完整示例 | 参考，不用改 |
 
 **想让自己的插件进市场**：不用往市场仓库塞代码，只在 `registry.jsonl` 加一行链接，提 PR。
@@ -24,9 +25,9 @@ npm test
 
 ## 文档怎么改
 
-文档源码在 `docs` 分支的 `docs/` 目录：
+文档源码在文档仓库 `main` 分支的 `docs/` 目录：
 
-```
+```text
 docs/                          ← 文档源码（本页就在这）
 package.json                   ← VitePress 依赖
 .github/workflows/build.yml    ← 构建校验
@@ -35,10 +36,10 @@ package.json                   ← VitePress 依赖
 1. 改对应 `.md`，写作要求见[文档写作规范](/dev/docs-style)
 2. 本地预览：`npm run docs:dev`
 3. 本地构建：`npm run docs:build`（CI 跑的就是这条）
-4. 提 PR 到 `docs` 分支
+4. 提 PR 到 `main` 分支
 
 合并后 `main` 上的 Pages 工作流会自动构建并发布到
-[文档站](https://aureth-labs.github.io/dsh-aurabot-qq-market-dev/)。
+[文档站](https://aureth-labs.github.io/dsh-aurabot-qq-docs/)。
 
 ::: tip 页面右上角的编辑按钮
 每页都有「在 GitHub 上编辑此页」，点进去就是对应的 Markdown 文件，改完直接提 PR。

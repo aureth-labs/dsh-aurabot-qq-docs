@@ -11,7 +11,7 @@
 
 ## 1. 拿模板
 
-打开 [模板仓库](https://github.com/shangxueink/dsh-aurabot-qq-plugins-template)，点 **Use this template**，
+打开 [模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template)，点 **Use this template**，
 或者下载 zip 解压后 push 到自己的仓库。
 
 仓库里已经有两个示例模块和一套 Actions，你要做的是改名和写业务。

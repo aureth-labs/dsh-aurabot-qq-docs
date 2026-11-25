@@ -48,14 +48,14 @@ features:
 | 仓库 | 干什么 |
 | --- | --- |
 | 作者仓库（你自己的） | 写插件、跑 Actions、发 Release，把 zip 地址回写进 `package.json` |
-| [模板仓库](https://github.com/shangxueink/dsh-aurabot-qq-plugins-template) | 点 **Use this template** 直接开写，自带 Actions 和两个示例 |
-| 市场仓库（本仓库） | 维护 `registry.jsonl`，拉取校验，生成 `market.json` 并发布到 `market` 分支 |
+| [模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template) | 点 **Use this template** 直接开写，自带 Actions 和两个示例 |
+| 市场仓库 | 维护 `registry.jsonl`，拉取校验，生成 `market.json` 并发布到 `market` 分支 |
 
 ## 插件市场镜像源
 
 宿主读的索引就是这里（自动构建，每天重建一次）：
 
-```
+```text
 https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 ```
 
@@ -75,5 +75,5 @@ https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 ## 给 AI 用的规范
 
 如果你打算让模型帮你写插件，把
-[`llms.txt`](https://aureth-labs.github.io/dsh-aurabot-qq-market-dev/llms.txt) 丢给它，
+[`llms.txt`](https://aureth-labs.github.io/dsh-aurabot-qq-docs/llms.txt) 丢给它，
 里面有完整的目录约定、`package.json` 字段、API 速查表和从零写插件的八个步骤。
