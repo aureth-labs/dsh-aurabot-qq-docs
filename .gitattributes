@@ -1,0 +1,14 @@
+# 换行：仓库里统一存 LF，检出时由 core.autocrlf 决定
+* text=auto
+
+# 二进制文件别做文本转换
+*.png -text
+*.jpg -text
+*.ico -text
+*.gif -text
+*.webp -text
+*.woff2 -text
+
+# GitHub 语言统计：这个仓库是文档站，只算正文
+* linguist-vendored
+docs/**/*.md -linguist-vendored
