@@ -4,6 +4,8 @@
 > 市场这边只产出 `market.json` 和规范；下面每一条都要宿主动手改。
 > 原则：新格式（`package.json` + `lib/`）和老格式（`module.json` + `index.mjs`）**并存**，老模块不改也能继续装。
 
+相关：插件写法本身的改造（ctx / schema / 元素 / 消息管线）见 [插件接口 v2](/PLUGIN-API-V2)。
+
 ## 0. 一句话
 
 宿主现在认三样：`module.json`、入口文件名 `index.mjs` / `index.js`、`index.json` + `assetsBase` 拼出来的 zip 地址。

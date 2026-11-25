@@ -65,6 +65,7 @@ export default defineConfig({
           text: '规范',
           items: [
             { text: '架构与决策', link: '/ARCHITECTURE' },
+            { text: '插件接口 v2', link: '/PLUGIN-API-V2' },
             { text: '主框架改造清单', link: '/HOST-CHANGES' },
           ],
         },
@@ -97,6 +98,7 @@ export default defineConfig({
           text: '规范',
           items: [
             { text: '架构与决策', link: '/ARCHITECTURE' },
+            { text: '插件接口 v2', link: '/PLUGIN-API-V2' },
             { text: '主框架改造清单', link: '/HOST-CHANGES' },
           ],
         },
