@@ -11,7 +11,7 @@
 **目标**
 
 - 插件写法统一成 `export const config` + `export function apply(ctx, config)`
-- 配置由 schema 描述，面板自动生成；`panel.js` 只用于自定义页面
+- 配置由 schema 描述（含 `disabled` / `experimental` 这类元信息），面板自动生成；`panel.js` 只在需要自定义 WebUI 时出现
 - 插件有生命周期：定时器、监听器随插件卸载自动清
 - 消息从纯字符串升级成元素树，支持 `h.text` / `h.image` / `h.voice` / `h.forward`
 - 一条消息可以有多个消费者（中间件 / 指令 / AI），消费与否是显式语义
@@ -52,8 +52,52 @@ export function apply(ctx, config) {
 
 `api: 1` 的老插件不需要改：`export default { settings, setup(api) }` 由适配器接在同一个 ctx 上跑。
 
-`apply` 可以是 `async`；插件里所有对外动作（发消息、请求、读写文件）都是异步的，
-统一 `await`，不存在同步版本。
+`apply` 可以是 `async`。模板仓库把 `command` / `middleware` 的签名定为 `async (session, next) => {}`：
+写成同步函数也能跑，代价是阻塞整条消息管线，所以默认一律异步。
+发消息、请求、读写文件这些对外动作都返回 Promise，统一 `await`。
+
+### 配置的元信息
+
+配置项不只有类型和默认值，还要能带元信息——这套直接照 Koishi 的 `Schema.meta()`：
+
+```ts
+export const config = Schema.object({
+  enabled: Schema.boolean().default(true),
+  source: Schema.union(['both', 'bilibili', 'netease'])
+    .default('both')
+    .description('搜索源'),
+  maxMinutes: Schema.natural().min(4).max(30).default(10)
+    .description('单次点歌最长时长（分钟）'),
+  voiceOnly: Schema.boolean().default(false)
+    .experimental()
+    .description('只推语音'),
+  internalToken: Schema.string()
+    .role('secret')
+    .disabled()
+    .description('由宿主注入，不要手填'),
+})
+```
+
+| 元信息 | 面板表现 |
+| --- | --- |
+| `description()` | 字段下方说明 |
+| `default()` / `required()` | 初始值 / 必填校验 |
+| `disabled()` | 置灰只读，提交时不接受修改 |
+| `hidden()` | 不渲染，但值仍然参与校验 |
+| `deprecated()` | 标「已废弃」，仍可改 |
+| `experimental()` | 标「实验性」，默认折叠 |
+| `role('secret')` | 输入框打码 |
+
+`experimental()` 是「能用但不保证稳定」的显式声明；`middlewareAfterCommand` 那类
+「开发中」配置项用同一套机制，前端负责显示标记。
+
+有了元信息，**普通插件只写 `config` 就够了**，不再需要 `panel.js`。
+
+### `panel.js` 只留给自定义 WebUI
+
+要加自定义页面（图表、批量操作、独立路由）的插件才需要它。形态和 Koishi console 扩展一致：
+`panel.js` 是**前端入口**，构建产物是 `dist/index.js`，宿主在面板里动态加载；
+它拿到的是前端侧的最小上下文，能注册页面和菜单，要数据只能走宿主暴露的接口，不能直接碰后端。
 
 ## ctx 面
 
@@ -62,14 +106,15 @@ export function apply(ctx, config) {
 | `ctx.config` | 本插件的配置（schema 校验后的对象） |
 | `ctx.root.config` | 全局配置，见「全局配置」 |
 | `ctx.logger` | 带插件名前缀的日志 |
-| `ctx.command()` | 注册指令：用户直接触发，不经过 AI |
+| `ctx.command()` | 注册指令：在中间件之前匹配，用户直接触发，不必等模型决定；执行结果照常回写上下文，AI 知道发过什么 |
 | `ctx.tool()` | 注册给 AI 调用的工具；用户不能直接调，必须由模型决定调用并传参 |
 | `ctx.middleware()` | 注册消息中间件 |
 | `ctx.on()` / `ctx.emit()` | 监听 / 触发事件。宿主内置事件按白名单暴露；插件之间可以自定义事件名互发 |
-| `ctx.setInterval()` / `ctx.setTimeout()` | 定时器，由 Cordis 在插件卸载时自动回收 |
+| `ctx.setInterval()` / `ctx.setTimeout()` | 定时器，注册进当前插件的 effect 作用域；卸载时由宿主统一回收（cordis 式生命周期，作者不用手写 `clearInterval`） |
 | `ctx.bots` | bot 列表：`ctx.bots[0]`；按 id 取用 `ctx.bots('1787850032')` |
 | `ctx.bot(id)` | 取单个 bot 实例（`ctx.bots(id)` 的别名） |
 | `ctx.broadcast()` | 多 bot 广播；必须显式调用，没有默认值 |
+| `ctx.platform()` / `ctx.guild()` / `ctx.private()` | 过滤器：返回只处理命中维度的 ctx，见「过滤器」 |
 | `ctx.llm` | 模型能力：润色、改写、摘要；后期扩到生成图片 / 视频 |
 
 **`ctx.send` 不存在。** 发送一律走 bot 或 session，原因见下一节。
@@ -130,6 +175,25 @@ const result = await session.execute('tell 主人的插件坏了')
 h('text', { content: '你好啊' })          // 等价于 h.text('你好啊')
 h('image', { src: 'https://…/cover.jpg' }) // 等价于 h.image(url)
 ```
+
+### 自定义类型与适配器能力
+
+类型不设白名单：`h('my-card', { title: '…' })` 这种自定义块照样能构造、能塞进元素树。
+能不能真的发出去，由**适配器声明支持的消息格式**决定：
+
+```ts
+await session.send(h('my-card', { title: '正在播放', cover: url }))
+```
+
+| 适配器格式 | 出站处理 |
+| --- | --- |
+| `text` | 只认 `text`；其它类型降级为文本或链接 |
+| `markdown` | 认 `text` + `markdown` |
+| `html` | 认 `text` + `html` |
+| `satori` | 全量，自定义块原样透传 |
+
+`session.bot.supports(type)` 查的就是这张表。插件只负责表达「想发什么」，
+降级由适配器实现，插件不猜平台能力。
 
 ```ts
 await session.send(h.text('这个视频好看'), h.image('https://…/cover.jpg'))
@@ -240,6 +304,20 @@ ctx.middleware(fn, { before: 'llm', timeout: 3000, onError: 'skip' })
 `return` 不带值当「消费」，是为了避免「框架发一次 + 插件再发一次」。
 返回字符串不自动当回复——要说话就 `session.send`。
 
+### 过滤器
+
+按维度过滤保留 Koishi 那套写法，插件不用自己写 `if (session.platform !== 'qq') return next()`：
+
+```ts
+ctx.platform('qq').middleware(async (session, next) => { … })
+ctx.platform('qq', 'discord').command('ping')
+ctx.guild('123456').on('message', handler)
+ctx.private().on('message', handler)
+```
+
+维度先支持 `platform` / `selfId` / `guild` / `channel` / `private`。
+过滤器只影响派发——不命中维度的消息不会进这个 ctx 的监听器，但 ctx 本身的生命周期不变。
+
 ### 出站回写上下文
 
 插件或中间件发出的消息，默认写回当前会话的上下文，标记为 `assistant / self-sent`。
@@ -270,16 +348,35 @@ Koishi 插件同理：只有纯逻辑（`ctx.command` / `ctx.middleware` / `ctx.
 而是一类**特殊插件**：自己注册 bot，拿到机器人的完整生命周期——上线、下线、收到消息、下发消息。
 
 ```ts
-export function apply(ctx, config) {
-  ctx.adapter({
+import { Schema } from '@aurabot/plugin-api'
+
+export const name = 'My Platform 适配器'
+export const reusable = true            // 允许同一个插件开多份配置（多账号）
+
+export const config = Schema.object({
+  selfId: Schema.string().required(),
+  token: Schema.string().role('secret'),
+})
+
+// 声明式：宿主读到这个导出，按它建 bot、管连接；插件不持有连接句柄
+export function adapter(config) {
+  return {
     platform: 'my-platform',
-    async connect() { /* 建立连接，返回 bot 实例 */ },
+    async connect() { /* 建立连接 */ },
     async disconnect() { /* 下线清理 */ },
-    async sendMessage(bot, channelId, elements) { /* 下发 */ },
-    async sendPrivateMessage(bot, userId, elements) { /* 私聊 */ },
-  })
+    decode(raw) { /* 入站：平台消息 → 元素树 */ },
+    async deliver(target, elements) { /* 真正的投递动作 */ },
+  }
 }
 ```
+
+- **不挂 `ctx.adapter`。** 适配器不是 ctx 上的方法，不改写上下文。它跟普通插件一样加载，
+  只是多导出一个 `adapter()` 契约
+- **默认允许多开。** 同一平台接多个账号是常态，多个实例共用同一套后端逻辑。
+  普通插件默认只能开一份，作者显式 `export const reusable = true` 才允许多份配置
+- **不通过 ctx 开关。** 启停、重连在面板与宿主侧完成，插件里没有 `ctx.adapter.connect()` 这类入口
+- **`sendMessage` / `sendPrivateMessage` 不是适配器的 API。** 它们是 `Bot` 的方法；
+  适配器只负责把 Bot 接上平台（内部叫 `deliver`），业务侧永远只跟 Bot / session 打交道
 
 - 好处：官方仓库不用背所有平台；社区仓库（`aurabot-adapters` 之类）可以单独维护，作者参考成本低
 - 代价：兼容面从「简单交互插件」扩大到「生命周期插件」。宿主必须先把 adapter 契约、bot 注册表、
@@ -311,11 +408,13 @@ export function apply(ctx, config) {
 ### S2 = P1：Schema 配置
 
 - [ ] 引入 `Schema`（`boolean` / `string` / `number` / `natural` / `union` / `object` / `array` / `default` / `description`）
+- [ ] 元信息：`disabled` / `hidden` / `deprecated` / `experimental` / `role('secret')` / `required`
 - [ ] 老 `settings` 数组自动转换，面板渲染一致
 - [ ] `app.config` 全局配置页
 - [ ] 校验失败在面板里就地提示，不要静默回落默认值
+- [ ] `panel.js` 改为可选的前端入口（产物 `dist/index.js`），普通插件不再需要它
 
-**验收**：一个只有 schema、没有 `panel.js` 的插件，所有配置项都能在面板里改。
+**验收**：一个只有 schema、没有 `panel.js` 的插件，所有配置项都能在面板里改，`experimental` 项带标记。
 
 ### S3 = P2：生命周期
 
@@ -329,10 +428,11 @@ export function apply(ctx, config) {
 
 - [ ] 注入全局 `h`：`text` / `at` / `image` / `voice` / `video` / `file` / `forward` / `quote` / `face`
 - [ ] `h` 是函数：`h('text', { content })`；同时提供 `h.parse` / `h.select` / `h.stringify` / `h.normalize`
+- [ ] 自定义类型不设白名单：`h('任意类型', props)` 可构造，能否出站由适配器能力表决定
 - [ ] 坏标签容错：不认识的 XML 标签丢弃、标签外的文本保留
 - [ ] `session.elements` 结构化，`session.content` 派生
 - [ ] 入站 OneBot 消息段 → 元素树；出站反序列化 + 降级
-- [ ] `bot.supports()` 能力表
+- [ ] `bot.supports()` 能力表：`text` / `markdown` / `html` / `satori` / `forward` / `voice` / `image`
 
 **验收**：`h.forward` 在 QQ 出合并转发，在不支持的平台降级为多条文本。
 
@@ -340,6 +440,7 @@ export function apply(ctx, config) {
 
 - [ ] 阶段 `command → middleware → llm`，`before` / `after` 按名字定位，默认 `middleware`
 - [ ] 全局配置 `commandPrefixes`（默认 `[null, '/']`）与 `middlewareAfterCommand`（默认 `false`）
+- [ ] 过滤器 `ctx.platform()` / `ctx.guild()` / `ctx.private()`，只影响派发
 - [ ] 消费语义：`return` / `return next()` / 多次 `session.send`
 - [ ] `{ timeout, onError: 'skip' }`
 - [ ] 出站回写上下文 + 全局配置
@@ -366,13 +467,15 @@ export function apply(ctx, config) {
 
 ### S8：适配器插件化
 
-- [ ] 定 `ctx.adapter()` 契约：`connect` / `disconnect` / `sendMessage` / `sendPrivateMessage` / 能力声明
-- [ ] bot 注册表支持动态增删（上线、下线、重连）
-- [ ] 入站消息由适配器构造 session 后交给管线，适配器不碰业务逻辑
-- [ ] 市场与面板区分「普通插件」和「适配器插件」，标注 requires 的 platform
+- [ ] 定声明式契约（不走 ctx）：`adapter()` 返回 `platform` / `connect` / `disconnect` / `decode` / `deliver` / 能力声明
+- [ ] `export const reusable = true` 支持多实例；普通插件默认单实例
+- [ ] bot 注册表支持动态增删（上线、下线、重连），由宿主管理，插件不持连接句柄
+- [ ] 入站消息由适配器 `decode` 成元素树后交给管线，适配器不碰业务逻辑
+- [ ] `Bot.sendMessage` / `sendPrivateMessage` 由宿主统一包装，不暴露成适配器方法
+- [ ] 市场与面板区分「普通插件」和「适配器插件」，标注 platform
 - [ ] 出一个官方适配器仓库做参考实现
 
-**验收**：一个仓库外的适配器插件装上就能让新平台上线收发消息，插件代码零改动。
+**验收**：一个仓库外的适配器插件装上就能让新平台上线收发消息，插件代码零改动；同平台可以开两个账号实例。
 
 ## 依赖与顺序
 
@@ -405,3 +508,4 @@ export function apply(ctx, config) {
 - [ ] `contextEcho` 默认开会不会让长会话上下文膨胀过快，需要实测
 - [ ] `middlewareAfterCommand` 在什么场景下默认打开才合理（先标「开发中」）
 - [ ] 适配器插件化的兼容边界：允许它用多少宿主内部能力
+- [ ] 多重过滤器叠加（`ctx.platform('qq').guild('…')`）是交集还是替换
