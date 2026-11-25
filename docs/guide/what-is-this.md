@@ -34,6 +34,7 @@ AuraBot 的插件市场**不托管代码**。它只做三件事：
 
 ## 下一步
 
+- 从零装起来：[装 DeepSeek Harness](/guide/install) → [配置模型](/guide/models) → [接入 QQ](/guide/connect-qq)
 - 想动手：[写第一个插件](/guide/first-plugin)
 - 想看取舍：[架构与决策](/ARCHITECTURE)
 - 想改宿主：[主框架改造清单](/HOST-CHANGES)

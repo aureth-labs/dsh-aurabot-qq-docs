@@ -126,3 +126,10 @@ https://github.com/<你>/<仓库>/blob/main/modules/voice-song/package.json
 | 面板空白 | `dist/panel.js` 不是「函数体 + return」，多半是没按 `export default function` 写 |
 | 构建后找不到入口 | `main` 和 `tsconfig.outDir` 对不上（默认 `lib/index.js` 对 `lib`） |
 | 运行时报 `Cannot find package` | 用了运行时依赖；改成构建期 bundle |
+
+## 延伸阅读
+
+- 目录和字段逐个解释：[插件结构](/dev/anatomy)
+- 为什么推荐 TypeScript：[为什么用 TypeScript](/dev/why-typescript)
+- 发版流水线细节：[构建与发布](/dev/build-release)
+- 面板怎么写：[面板：client → dist](/dev/panel)
