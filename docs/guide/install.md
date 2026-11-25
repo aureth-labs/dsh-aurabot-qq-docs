@@ -5,12 +5,14 @@
 ## 选择安装方式
 
 ::: details 桌面版
+
 从 [DeepSeek Harness 官方页面](https://www.deepseek.com/harness/)下载桌面端并完成安装。该方式适合希望直接使用图形界面的用户。
 
 桌面版的命令行入口位置随发行版而异。需要执行本文命令时，请使用该发行版提供的入口，或在其设置中查看运行时目录。
 :::
 
 ::: details npx
+
 使用该方式前需要安装 Node.js 22 或更高版本。Node.js 不是 DSH 运行的必要条件，桌面发行版用户通常可以跳过。
 
 ```bash
@@ -21,6 +23,7 @@ npx @deepseek-ai/dsh web
 :::
 
 ::: details 交给 AI 安装
+
 如果由具备终端权限的 AI 助手部署，可以直接向它发送以下说明文件：
 
 ```text
