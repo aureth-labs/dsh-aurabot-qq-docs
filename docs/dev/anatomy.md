@@ -1,5 +1,9 @@
 # 插件结构
 
+清单可以有两种写法：市场与模板走 `package.json`（推荐，构建时同步出 `module.json`）；
+手写的单文件模块也可以只放一个 `module.json`，宿主读不到 `package.json` 时回落到它。
+下面按 `package.json` 讲。
+
 一个插件就是一个目录，目录里最小只需要两样东西：`package.json` 和编译后的入口。
 我们推荐的结构是：
 

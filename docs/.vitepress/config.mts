@@ -12,23 +12,47 @@ const guide = [
   { text: '安装 AuraBot', link: '/guide/install-aurabot' },
   { text: '接入 QQ', link: '/guide/connect-qq' },
   { text: '认识面板', link: '/guide/configure' },
+  { text: 'QQ 命令与白名单', link: '/guide/commands' },
   { text: '装社区模块', link: '/guide/install-plugin' },
   { text: '常见问题', link: '/guide/faq' },
 ]
 
 const features = [
   { text: '功能总览', link: '/features/' },
-  { text: '画图', link: '/features/image' },
-  { text: '语音', link: '/features/voice' },
-  { text: 'TTS：换一个嗓子', link: '/features/tts' },
-  { text: '翻唱', link: '/features/cover' },
-  { text: '点歌', link: '/features/music' },
+  {
+    text: '聊天',
+    items: [
+      { text: '人格、心情与群聊', link: '/features/chat' },
+      { text: '记忆', link: '/features/memory' },
+      { text: '表情包', link: '/features/sticker' },
+    ],
+  },
+  {
+    text: '说和唱',
+    items: [
+      { text: '语音', link: '/features/voice' },
+      { text: 'TTS：换一个嗓子', link: '/features/tts' },
+      { text: '翻唱', link: '/features/cover' },
+    ],
+  },
+  {
+    text: '其它本事',
+    items: [
+      { text: '画图', link: '/features/image' },
+      { text: '点歌', link: '/features/music' },
+      { text: 'QQ 空间', link: '/features/qzone' },
+      { text: '刷 B 站', link: '/features/bilibili' },
+      { text: '桌宠', link: '/features/pet' },
+      { text: '主动搭话', link: '/features/speakup' },
+    ],
+  },
 ]
 
 const dev = [
   { text: '为什么用 TypeScript', link: '/dev/why-typescript' },
   { text: '插件结构', link: '/dev/anatomy' },
   { text: '写第一个插件', link: '/dev/first-plugin' },
+  { text: '十五分钟写一个模块', link: '/dev/module-quickstart' },
   { text: '构建与发布', link: '/dev/build-release' },
   { text: '面板：client → dist', link: '/dev/panel' },
   { text: '如何开发我们的框架', link: '/dev/develop-framework' },
@@ -37,15 +61,18 @@ const dev = [
 ]
 
 const reference = [
+  { text: '模块 API 速查', link: '/reference/module-api' },
   { text: '插件接口 v2', link: '/reference/plugin-api' },
+  { text: '设计要点', link: '/reference/design' },
   { text: '架构与决策', link: '/reference/architecture' },
   { text: '主框架改造清单', link: '/reference/host-changes' },
+  { text: '第三方与致谢', link: '/reference/third-party' },
 ]
 
 export default defineConfig({
   lang: 'zh-CN',
   title: 'AuraBot 文档',
-  description: '从装 DeepSeek Harness 到接入 QQ、画图、语音、翻唱，再到写自己的插件',
+  description: '住在 QQ 里的 AI 伙伴——安装、接入、画图语音翻唱，到写自己的模块',
   base: '/dsh-aurabot-qq-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -56,17 +83,17 @@ export default defineConfig({
       { text: '入门', link: '/guide/what-is-this' },
       { text: '功能', link: '/features/' },
       { text: '开发', link: '/dev/why-typescript' },
-      { text: '参考', link: '/reference/plugin-api' },
+      { text: '参考', link: '/reference/module-api' },
       {
         text: '链接',
         items: [
-          {
-            text: '插件市场镜像（market.json）',
-            link: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json',
-          },
-          { text: '宿主 AuraBot', link: 'https://github.com/aureth-labs/dsh-aurabot-qq' },
+          { text: '主仓库（宿主）', link: 'https://github.com/aureth-labs/dsh-aurabot-qq' },
           { text: '社区模块仓库', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-mods' },
           { text: '模板仓库', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template' },
+          {
+            text: '市场镜像（market.json）',
+            link: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json',
+          },
           { text: 'llms.txt（给 AI 看）', link: `${SITE}/llms.txt` },
         ],
       },
@@ -107,8 +134,8 @@ export default defineConfig({
     },
 
     footer: {
-      message: '文档开源在 GitHub，插件代码各在各的作者仓库里。',
-      copyright: 'AuraBot · 文档有问题直接提 Issue 或改 `docs` 仓库',
+      message: '文档开源在 GitHub，插件与模块的代码各在各的作者仓库里。',
+      copyright: 'AuraBot · MIT · 文档有问题直接提 Issue',
     },
 
     outline: { level: [2, 3], label: '本页目录' },

@@ -1,19 +1,23 @@
 # 贡献指南
 
-这套东西有四个仓库，改哪个、走什么流程，先分清楚。
+这套东西有五个仓库，改哪个、走什么流程，先分清楚。
 
-## 四个仓库分别收什么
+## 五个仓库分别收什么
 
 | 仓库 | 收什么 | 怎么提 |
 | --- | --- | --- |
-| [文档仓库](https://github.com/aureth-labs/dsh-aurabot-qq-docs) | 文档站源码 | 改 `main` 提 PR |
-| [市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev) | 收录表、构建器 | 改 `main` 提 PR |
-| [模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template) | 插件模板、Actions、发版脚本 | fork 或用「Use this template」开自己的仓库 |
-| [示例插件仓库](https://github.com/shangxueink/dsh-aurabot-qq-market-dev-plugins) | 两个能跑的完整示例 | 参考，不用改 |
+| [主仓库](https://github.com/aureth-labs/dsh-aurabot-qq) | AuraBot 宿主本体（QQ 网关、聊天中枢、内置模块、面板） | 改 `main` 提 PR |
+| [社区模块仓库](https://github.com/aureth-labs/dsh-aurabot-qq-mods) | 社区模块的源码（一模块一作者维护） | 改 `main` 提 PR，一 PR 一个模块 |
+| [文档仓库](https://github.com/aureth-labs/dsh-aurabot-qq-docs) | 文档站源码（就是你在看的这个） | 改 `main` 提 PR |
+| [市场仓库](https://github.com/aureth-labs/dsh-aurabot-qq-market-dev) | `registry.jsonl` 收录表、构建器 | 改 `main` 提 PR |
+| [模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template) | 模块模板、Actions、发版脚本 | 用「Use this template」开自己的仓库，不用改这个 |
 
-**想让自己的插件进市场**：不用往市场仓库塞代码，只在 `registry.jsonl` 加一行链接，提 PR。
+**想让自己的模块进市场**：不用往市场仓库塞代码，只在 `registry.jsonl` 加一行链接，提 PR。
+模块的代码放在**你自己的仓库**里，或者提给社区模块仓库。
 
-## 提 PR 前
+## 提模块 PR 前
+
+在社区模块仓库或你自己的仓库里跑（文档仓库只跑最后一条）：
 
 ```bash
 npm install

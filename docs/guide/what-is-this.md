@@ -9,24 +9,44 @@
 | 层 | 名字 | 干什么 | 谁维护 |
 | --- | --- | --- | --- |
 | 1 | DeepSeek Harness（宿主） | 管模型、会话、工作区、Web UI、插件加载 | DeepSeek 官方 |
-| 2 | AuraBot（插件） | 接 QQ，管人格、记忆、权限、语音、画图、翻唱 | 我们这个仓库 |
+| 2 | AuraBot（插件） | 接 QQ，管人格、记忆、权限、语音、画图、翻唱 | 这个仓库 |
 | 3 | 模块（module） | AuraBot 里的功能件：点歌、生图、TTS、桌宠…… | 社区作者各自维护 |
 | 4 | 市场（market） | 只存索引 `market.json`，不存代码 | 我们 |
 
 记住一句就不容易绕晕：**模块住在 AuraBot 里，AuraBot 住在 DSH 里**。
+
+## 她跟「关键词回复机器人」不一样
+
+| 常见做法 | AuraBot |
+| --- | --- |
+| 关键词命中就回一段固定文本 | 交给模型判断这条要不要回、怎么回、用哪个模型 |
+| 所有功能写在一个文件里 | 每项本事都是模块，能关、能换、能自己写 |
+| 默认全开，出事才补 | **默认全关 + 试运行**，不手动打开一句都不会发 |
+| 权限靠提示词约束 | 执行层再查一遍：群聊和他人私聊根本不挂本机工具 |
 
 ## 一条消息怎么走
 
 ```text
 QQ 群里有人说话
    └─ 网关（SnowLuma / NapCat / LLOneBot）→ OneBot v11
-        └─ AuraBot：判断要不要回、查权限、拼人格与记忆
+        └─ AuraBot：白名单 → 要不要回 → 群聊策略 → 拼人格与记忆
              └─ DSH：调模型
-                  └─ 模型决定：直接回 / 调工具（画图、点歌、搜网页）
-                       └─ AuraBot：把结果发回 QQ（文字 / 图片 / 语音条）
+                  └─ 模型决定：直接回 / 调工具（画图、点歌、看视频）
+                       └─ AuraBot：拆条 → 文字 / 图片 / 语音条发回 QQ
 ```
 
 上游是网关的事，下游是模型的事，中间那一层才是 AuraBot 在干的活。
+
+## 默认状态
+
+| 开关 | 装好时 | 含义 |
+| --- | --- | --- |
+| 总开关 | **关** | 她只读消息、只思考，不发出去 |
+| 试运行 | **开** | 即使总开关开了，也只把要发的话写进日志 |
+| 群白名单 | 空 | 群消息一律不理，加群号才算 |
+| 私聊白名单 | 只有主人 | 陌生人私聊不理 |
+| 敏感操作权限 | 仅主人私聊 | 改资料、发文件、点歌、生图都要「这轮全是主人」 |
+| 目的引擎 | 关（实验性） | 默认用「主动搭话」 |
 
 ## 市场为什么不存代码
 
@@ -35,7 +55,7 @@ QQ 群里有人说话
 ```text
 作者仓库 push
    └─ Actions：npm ci → build → 打 zip → 发 Release
-        └─ 回写 package.json.aurabot.artifact{url,sha256,size}（bot commit，[skip ci]）
+        └─ 回写 package.json.aurabot.artifact{url,sha256,size}
 
 市场仓库
    registry.jsonl（一行一个 package.json 的 GitHub 链接）
@@ -54,7 +74,7 @@ QQ 群里有人说话
 - 同一 owner 下重名，后来的自动加 `-2`、`-3`
 - 只允许 ESM（`"type": "module"`），CJS 直接拒绝
 - 自动收录一律 `verified: false`，是否审核看 `verified.json`
-- 撤回某个版本：自己删 Release、改版本号，下次全量重建就看不到了
+- 撤回某个版本：自己删 Release、改版本号，下次重建就看不到了
 
 ## 你要准备什么
 
@@ -64,12 +84,10 @@ QQ 群里有人说话
 | 一个 QQ 小号 | 给机器人用，别拿主号试 | 必需 |
 | 一个大模型 API 密钥 | 她的大脑 | 必需 |
 | 一个网关 | 让机器人号上线 | 必需 |
-| `ffmpeg` | 点歌、部分语音处理 | 用到才要 |
+| `ffmpeg` | 点歌、抽帧、缩图、混音 | 用到才要 |
 | Python | `edge-tts`、RVC 翻唱 | 用到才要 |
 
 ## 下一步
-
-按顺序走：
 
 1. [装 DeepSeek Harness](/guide/install)
 2. [配置模型](/guide/models)
@@ -78,5 +96,6 @@ QQ 群里有人说话
 5. [认识面板](/guide/configure)
 
 想直接看能干什么：[功能总览](/features/)。
-想自己写模块：[写第一个插件](/dev/first-plugin)。
-想看设计取舍：[架构与决策](/reference/architecture)、[主框架改造清单](/reference/host-changes)。
+想自己写模块：[十五分钟写一个模块](/dev/module-quickstart)。
+想看设计取舍：[设计要点](/reference/design)。
+第三方代码与许可：[第三方与致谢](/reference/third-party)。
