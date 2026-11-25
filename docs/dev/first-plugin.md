@@ -1,8 +1,11 @@
 # 写第一个插件
 
-本例使用模板仓库创建一个可构建的 V1 模块。只用于本地实验时，也可以先阅读[快速试用模块](/dev/module-quickstart)。
+本例使用模板仓库创建一个可构建的 V1 模块。只用于本地实验时，也可以先阅读[快速试用模块](module-quickstart.md)。
 
-::: warning V1 示例
+::: warning
+
+V1 示例
+
 以下代码、清单和步骤属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口仍在开发中。
 :::
 
@@ -80,7 +83,7 @@ pnpm test
 
 ## 可选面板
 
-面板入口必须采用 `export default function Panel(...)` 形式，具体原因和示例见[编写面板](/dev/panel)。
+面板入口必须采用 `export default function Panel(...)` 形式，具体原因和示例见[编写面板](panel.md)。
 
 ## 发布与收录
 

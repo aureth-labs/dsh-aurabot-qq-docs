@@ -2,7 +2,10 @@
 
 AuraBot 插件最终运行的是 JavaScript。TypeScript 的作用是在开发阶段检查接口、参数和数据结构，不改变运行时的模块格式。
 
-::: warning V1 示例
+::: warning
+
+V1 示例
+
 以下内容属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口仍在开发中。
 :::
 
@@ -45,4 +48,4 @@ pnpm build
 
 本地一次性脚本或很小的功能可以直接写 `index.mjs`。需要长期维护、公开发布或接入 CI 时，应使用 TypeScript 模板。
 
-插件结构见[插件结构](/dev/anatomy)，发布流程见[构建与发布](/dev/build-release)。
+插件结构见[插件结构](anatomy.md)，发布流程见[构建与发布](build-release.md)。

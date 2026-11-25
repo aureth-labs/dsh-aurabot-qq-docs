@@ -2,7 +2,7 @@
 
 本文列出新插件市场对主仓库的兼容要求。新的 `package.json`、`lib/` 与 `market.json` 格式应与 V1 的 `module.json`、`index.mjs` 和 `index.json` 并存，避免现有模块失效。
 
-插件上下文、配置和消息管线的改造见[插件接口 V2](/reference/plugin-api)。本页各项仍属于改造计划，不表示当前版本已经支持。
+插件上下文、配置和消息管线的改造见[插件接口 V2](plugin-api.md)。本页各项仍属于改造计划，不表示当前版本已经支持。
 
 ## 清单读取
 

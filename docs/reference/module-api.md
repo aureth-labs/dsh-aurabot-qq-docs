@@ -1,6 +1,6 @@
 # V1 模块 API
 
-本文记录 AuraBot V1 的公开模块接口。V2 插件采用 `apply(ctx, config)`，不要把两套接口混写，设计见[插件接口 V2](/reference/plugin-api)。
+本文记录 AuraBot V1 的公开模块接口。V2 插件采用 `apply(ctx, config)`，不要把两套接口混写，设计见[插件接口 V2](plugin-api.md)。
 
 V1 用户模块位于 AuraBot 数据目录的 `modules/<id>/`，主仓库升级不会覆盖该目录。完整接口文件由 AuraBot 启动时更新：
 

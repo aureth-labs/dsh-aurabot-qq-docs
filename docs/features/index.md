@@ -6,28 +6,28 @@
 
 | 功能 | 说明 |
 | --- | --- |
-| [人格、心情与群聊](/features/chat) | 配置人格、情绪状态和群聊回复策略 |
-| [记忆](/features/memory) | 保存、检索和整理长期信息 |
-| [表情包](/features/sticker) | 收集、标注和发送表情 |
+| [人格、心情与群聊](chat.md) | 配置人格、情绪状态和群聊回复策略 |
+| [记忆](memory.md) | 保存、检索和整理长期信息 |
+| [表情包](sticker.md) | 收集、标注和发送表情 |
 
 ## 音频
 
 | 功能 | 额外依赖 |
 | --- | --- |
-| [语音](/features/voice) | 默认使用 `edge-tts`，需要 Python 环境 |
-| [语音合成](/features/tts) | 可接云服务或自定义 HTTP 接口 |
-| [翻唱](/features/cover) | Windows、RVC 环境和已授权音色 |
+| [语音](voice.md) | 默认使用 `edge-tts`，需要 Python 环境 |
+| [语音合成](tts.md) | 可接云服务或自定义 HTTP 接口 |
+| [翻唱](cover.md) | Windows、RVC 环境和已授权音色 |
 
 ## 其他功能
 
 | 功能 | 说明 |
 | --- | --- |
-| [画图](/features/image) | 通过生图模型生成并发送图片 |
-| [点歌](/features/music) | 搜索音源并发送原唱语音 |
-| [QQ 空间](/features/qzone) | 发布说说、处理评论和好友动态 |
-| [刷 B 站](/features/bilibili) | 浏览视频、评论、分享和发送弹幕 |
-| [桌宠](/features/pet) | 在桌面显示角色和对话气泡 |
-| [主动搭话](/features/speakup) | 在满足频率和时段条件时主动发送私聊 |
+| [画图](image.md) | 通过生图模型生成并发送图片 |
+| [点歌](music.md) | 搜索音源并发送原唱语音 |
+| [QQ 空间](qzone.md) | 发布说说、处理评论和好友动态 |
+| [刷 B 站](bilibili.md) | 浏览视频、评论、分享和发送弹幕 |
+| [桌宠](pet.md) | 在桌面显示角色和对话气泡 |
+| [主动搭话](speakup.md) | 在满足频率和时段条件时主动发送私聊 |
 
 ## 通用检查顺序
 

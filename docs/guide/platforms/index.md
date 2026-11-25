@@ -6,7 +6,7 @@
 
 | 平台 | 状态 | 连接方式 |
 | --- | --- | --- |
-| QQ | 已支持 | OneBot v11，见[接入 QQ](/guide/platforms/qq) |
+| QQ | 已支持 | OneBot v11，见[接入 QQ](qq.md) |
 | QQ 官方 | 规划中 | QQ 开放平台 |
 | Telegram | 规划中 | Bot API |
 | Discord | 规划中 | Bot API |

@@ -53,10 +53,10 @@ pnpm docs:build
 
 ## 修改顺序
 
-1. 先读[写作规范](/dev/docs-style)和[术语表](/dev/glossary)。
+1. 先读[写作规范](docs-style.md)和[术语表](glossary.md)。
 2. 修改正文；涉及界面名称、命令或字段时，以当前代码为准。
 3. 检查站内链接、代码块语言和命令格式。
 4. 运行 `pnpm docs:build`。
-5. 按[贡献指南](/dev/contributing)提交修改。
+5. 按[贡献指南](contributing.md)提交修改。
 
 写作规范规定表达形式，术语表规定名称。修改术语表会同时影响全站，提交时应说明原因。

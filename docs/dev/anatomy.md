@@ -1,8 +1,11 @@
 # 插件结构
 
-本页描述当前 TypeScript 模板和 V1 模块接口。V2 的 `ctx` 写法见[V2 插件接口设计](/reference/plugin-api)。
+本页描述当前 TypeScript 模板和 V1 模块接口。V2 的 `ctx` 写法见[V2 插件接口设计](../reference/plugin-api.md)。
 
-::: warning V1 示例
+::: warning
+
+V1 示例
+
 以下代码和字段说明属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口仍在开发中。
 :::
 

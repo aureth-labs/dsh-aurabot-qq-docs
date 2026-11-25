@@ -22,7 +22,7 @@
 
 ## 名称与术语
 
-名称以[术语表](/dev/glossary)为准。产品名、协议名、界面名称和代码标识符分别处理：
+名称以[术语表](glossary.md)为准。产品名、协议名、界面名称和代码标识符分别处理：
 
 - `DeepSeek Harness`、`AuraBot`、`TypeScript`、`Node.js` 等名称保留官方拼写和大小写。
 - 中文正文中的按钮、菜单和配置项使用界面原文，并用中文引号标出。
@@ -95,11 +95,39 @@
 
 | 指向 | 写法 | 示例 |
 | --- | --- | --- |
-| 站内页面 | 以 `/` 开头，不带 `base` | `/guide/install` |
+| 站内页面 | 相对当前文件，带 `.md` 后缀 | `[安装准备](prepare.md)` |
+| 跨目录页面 | 使用 `../` 定位，带 `.md` 后缀 | `[插件接口](../reference/plugin-api.md)` |
 | 站外页面 | 完整 URL | `https://github.com/aureth-labs/dsh-aurabot-qq` |
 | `public/` 静态文件 | 完整线上 URL | `https://aureth-labs.github.io/dsh-aurabot-qq-docs/llms.txt` |
 
+站内链接必须使用相对路径并保留 `.md` 后缀，例如：
+
+```md
+[安装准备](prepare.md)
+[插件接口](../reference/plugin-api.md)
+[平台连接](platforms/index.md)
+```
+
+不要使用 `/guide/install` 这类站点根路径。相对 `.md` 路径可以被 VS Code 的 Markdown 检查直接解析；VitePress 构建时会将其转换为对应的站内页面地址。
+
+链接到目录首页时必须写出 `index.md`，链接到标题时在 `.md` 后追加锚点，如 `docs-style.md#链接`。
+
 VitePress 不会为 `public/` 中的静态文件自动添加 `base`，因此不能只写 `/llms.txt`。
+
+## 提示容器
+
+VitePress 提示容器的类型单独占一行，自定义标题从下一段开始，不要写在 `:::` 指令同一行：
+
+```md
+::: warning
+
+V1 示例
+
+这里是提示正文。
+:::
+```
+
+不要写成 `::: warning V1 示例`。换行写法与 Markdown 检查工具一致，也能避免标题和正文被解析到同一段。
 
 ## 准确性与版本
 
@@ -111,10 +139,12 @@ VitePress 不会为 `public/` 中的静态文件自动添加 `base`，因此不�
 
 ## 提交前检查
 
-- [ ] 用词符合[术语表](/dev/glossary)，产品名大小写正确。
+- [ ] 用词符合[术语表](glossary.md)，产品名大小写正确。
 - [ ] 中文标点、空格、数字和单位符合本页规范。
 - [ ] 没有宣传口号、重复总结和无依据的承诺。
 - [ ] 命令可直接执行，示例字段与当前代码一致。
 - [ ] 所有代码块均标注语言。
+- [ ] 站内链接使用相对路径并保留 `.md` 后缀。
+- [ ] 提示容器的类型与自定义标题分开换行。
 - [ ] 站内链接和静态文件地址有效。
 - [ ] `pnpm docs:build` 通过。

@@ -1,6 +1,6 @@
 # 安装 DeepSeek Harness
 
-先安装并启动 DSH，再安装 AuraBot。Node.js 是否需要安装取决于所选发行版，详见[安装准备](/guide/prepare)。
+先安装并启动 DSH，再安装 AuraBot。Node.js 是否需要安装取决于所选发行版，详见[安装准备](prepare.md)。
 
 ## 选择安装方式
 
@@ -36,6 +36,6 @@ https://raw.githubusercontent.com/aureth-labs/dsh-aurabot-qq-docs/main/docs/publ
 
 打开 DeepSeek Harness 桌面端或 Web UI，选择一个工作区，确认能够新建会话并输入消息。
 
-首次使用可以登录 DSH 账号，也可以配置自己的模型服务。模型配置见[配置模型](/guide/models)。
+首次使用可以登录 DSH 账号，也可以配置自己的模型服务。模型配置见[配置模型](models.md)。
 
 DSH 仍处于开发阶段，菜单名称和启动参数可能随版本变化。以 [DeepSeek Harness 官方页面](https://www.deepseek.com/harness/)和当前安装版本为准。

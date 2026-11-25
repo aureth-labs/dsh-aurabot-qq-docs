@@ -2,7 +2,10 @@
 
 市场保存索引，插件代码和构建产物保存在作者仓库及其 Release 中。
 
-::: warning V1 示例
+::: warning
+
+V1 示例
+
 以下清单字段和市场流程属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 的发布格式仍在开发中。
 :::
 
@@ -34,4 +37,4 @@ AuraBot：读取 market.json → 下载并校验 → 安装
 - [ ] 代码未混淆，产物由 CI 从源码构建。
 - [ ] 许可证允许分发，第三方代码已署名。
 
-字段定义见[V1 模块 API](/reference/module-api)，安装侧说明见[安装社区模块](/guide/install-plugin)。
+字段定义见[V1 模块 API](../reference/module-api.md)，安装侧说明见[安装社区模块](../guide/install-plugin.md)。

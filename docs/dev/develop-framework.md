@@ -1,6 +1,6 @@
 # 框架开发环境
 
-本文面向 AuraBot 主仓库开发者，说明本机环境、DSH 插件加载方式、热重载和 TypeScript 迁移。社区插件的目录结构与发布流程见[插件开发](/dev/why-typescript)。
+本文面向 AuraBot 主仓库开发者，说明本机环境、DSH 插件加载方式、热重载和 TypeScript 迁移。社区插件的目录结构与发布流程见[插件开发](why-typescript.md)。
 
 文中路径来自一套 Windows 开发环境。实际开发时应替换为自己的安装目录，不要照抄用户名和盘符。
 

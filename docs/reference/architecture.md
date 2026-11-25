@@ -1,6 +1,6 @@
 # 插件市场架构
 
-本文说明新插件市场的代码托管、构建和索引方案。该方案与 V1 的 `module.json`、`index.json` 安装协议不同，宿主兼容工作见[主框架改造清单](/reference/host-changes)。
+本文说明新插件市场的代码托管、构建和索引方案。该方案与 V1 的 `module.json`、`index.json` 安装协议不同，宿主兼容工作见[主框架改造清单](host-changes.md)。
 
 ## 职责划分
 

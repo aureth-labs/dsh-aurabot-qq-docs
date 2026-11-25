@@ -25,7 +25,7 @@ https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 AuraBot：读取索引 → 下载并校验产物 → 加载入口
 ```
 
-这种结构使作者可以独立发布版本，同时让客户端在加载前校验构建产物。发布方法见[发布到市场](/dev/market-publish)。
+这种结构使作者可以独立发布版本，同时让客户端在加载前校验构建产物。发布方法见[发布到市场](../dev/market-publish.md)。
 
 ## 本地模块
 

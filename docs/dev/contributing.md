@@ -30,7 +30,7 @@ pnpm install --frozen-lockfile
 
 ## 文档修改
 
-先阅读[开始编写文档](/dev/documentation)、[写作规范](/dev/docs-style)和[术语表](/dev/glossary)。
+先阅读[开始编写文档](documentation.md)、[写作规范](docs-style.md)和[术语表](glossary.md)。
 
 ```bash
 pnpm install
