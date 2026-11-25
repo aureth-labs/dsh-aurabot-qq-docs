@@ -14,10 +14,10 @@ const guide = [
     ],
   },
   {
-    text: '面板与命令',
+    text: '运行与配置',
     items: [
       { text: '面板配置', link: '/guide/configure' },
-      { text: 'QQ 命令', link: '/guide/commands' },
+      { text: '平台指令', link: '/guide/commands' },
     ],
   },
   { text: '安装社区模块', link: '/guide/install-plugin' },

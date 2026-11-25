@@ -15,7 +15,11 @@
 
 ## 插件修改
 
-在对应插件仓库执行其实际提供的检查、构建和测试命令。不要假定所有插件使用同一个包管理器。
+我们的插件、框架和文档仓库统一使用 pnpm，并通过 `package.json` 的 `packageManager` 固定版本。安装依赖时执行：
+
+```bash
+pnpm install --frozen-lockfile
+```
 
 提交前检查：
 

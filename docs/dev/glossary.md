@@ -34,10 +34,7 @@
 | 平台 | QQ、Telegram、Discord 等消息服务 | 渠道、应用市场 |
 | QQ 网关 | 实现 OneBot v11、帮助 QQ 账号收发消息的软件 | 适配器、模型网关 |
 | OneBot v11 | QQ 机器人常用的消息协议 | OneBot11、onebot v11 |
-| SnowLuma | QQ 网关的一种实现 | Snow Luma、snowluma（代码和文件名除外） |
-| NapCat | QQ 网关的一种实现 | Napcat、NAPCAT |
-| LLOneBot | QQ 网关的一种实现 | LLonebot、LLOne Bot |
-| Lagrange | QQ 网关的一种实现 | lagrange（代码和包名除外） |
+| LuckyLilliaBot | 文档中作为示例的 OneBot v11 服务 | Lucky Lillia Bot、luckylilliaBot（代码和文件名除外） |
 | 模型网关 | 统一转发模型请求并处理路由、重试等逻辑的服务 | QQ 网关、机器人网关 |
 | Magpie | 独立模型网关项目 | Mapie、Magic Pie、AuraBot 网关 |
 | 模型提供商 | 提供模型 API 的服务方 | 模型厂商、模型插件 |

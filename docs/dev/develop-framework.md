@@ -247,7 +247,7 @@ AuraBot 为社区插件实现了独立的文件监听和重载流程：
 在插件目录运行：
 
 ```powershell
-npm run dev
+pnpm dev
 ```
 
 该进程持续更新 `lib/`，AuraBot 的目录扫描再加载新产物。停止监听进程不会撤销已经生成的文件。
@@ -264,11 +264,11 @@ npm run dev
 迁移期间保留 JavaScript 与 TypeScript 混合构建能力。发布包必须包含 `lib/`；从源码仓库直接安装时，还需要明确构建步骤，避免安装后缺少入口。
 
 ```powershell
-npm run check
-npm run build
+pnpm check
+pnpm build
 ```
 
-包管理器以主仓库最终配置为准。上述命令仅表示脚本名称，不要求主仓库改用 npm 管理依赖。
+AuraBot 主仓库和插件仓库统一使用 pnpm，并在 `package.json` 中通过 `packageManager` 固定版本。DSH 源码也使用 pnpm，开发时不要混用 npm、Yarn 或 Bun。
 
 ## 故障排查
 

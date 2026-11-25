@@ -28,7 +28,7 @@
 - 定时从聊天记录和 QQ 空间动态整理的内容。
 - 点歌、评论等运行记录。
 - 空间日记。
-- 面板或 `/remember` 手动添加的内容。
+- 面板手动添加的内容。
 
 整理记忆时，新事实与旧记录合并；已经失效的记录标记为「已过时」，不直接删除。每个用户、群聊还可以保存人物档案、相处经验和表达习惯。
 
@@ -47,7 +47,7 @@
 ## 翻唱流程
 
 ```text
-qq_song_cover 工具或 /sing
+qq_song_cover 工具
  └─ 获取歌曲音频
      └─ 截取目标片段
          └─ audio-separator 分离人声和伴奏
@@ -100,19 +100,6 @@ qq_song_cover 工具或 /sing
 模型选择优先级为：当前私聊、当前群聊、私聊或群聊默认模型、全局模型。
 
 配置保存在 `config.json` 的 `chatModels` 中，包括 `privateDefault`、`groupDefault`、`privates` 和 `groups`。重启后仍然保留，从对应会话的下一条消息开始生效。只有主人可以修改；模块的 `model` 挂钩随后执行。
-
-## SnowLuma 管理
-
-SnowLuma 的许可条款不允许通过自动化脚本部署，因此 AuraBot 不下载 SnowLuma，也不代替用户同意协议。
-
-| AuraBot 执行 | AuraBot 不执行 |
-| --- | --- |
-| 显示协议，由用户确认 | 自动同意协议 |
-| 启停用户已经安装的实例 | 下载和安装实例 |
-| 使用 `SNOWLUMA_WEBUI_BOOTSTRAP_PASSWORD` 生成控制台密码 | 沿用用户原密码 |
-| 通过 `/api/processes` 核对进程，只为机器人账号注入 | 为主账号注入 |
-
-无法识别账号时，只允许在唯一一个未识别账号的进程上尝试，连接后通过 `get_login_info` 复核；账号不符时断开并撤销。`hookAutoLoad` 始终关闭。
 
 ## 安全边界
 

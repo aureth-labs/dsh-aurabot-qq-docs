@@ -2,13 +2,18 @@
 
 发布包应由 CI 从源码构建。仓库保存源码、清单和构建脚本，Release 保存供用户下载的 zip。
 
+::: warning V1 示例
+以下构建和发布流程属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口和发布流程尚未定稿。
+:::
+
 ## 本地检查
 
-以项目实际脚本为准。npm 模板通常使用：
+仓库统一使用 pnpm：
 
 ```bash
-npm run check
-npm run build
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
 ```
 
 构建过程负责：

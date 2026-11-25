@@ -2,6 +2,10 @@
 
 本例使用模板仓库创建一个可构建的 V1 模块。只用于本地实验时，也可以先阅读[快速试用模块](/dev/module-quickstart)。
 
+::: warning V1 示例
+以下代码、清单和步骤属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口仍在开发中。
+:::
+
 ## 创建目录
 
 从[模板仓库](https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template)创建自己的仓库，再复制最小示例：
@@ -20,6 +24,7 @@ cp -r modules/hello modules/voice-song
   "version": "1.0.0",
   "description": "按歌名搜索候选歌曲",
   "type": "module",
+  "packageManager": "pnpm@11.1.2",
   "main": "lib/index.js",
   "aurabot": {
     "displayName": "语音点歌",
@@ -62,13 +67,13 @@ export default {
 
 ## 本地验证
 
-以模板声明的包管理器为准。npm 模板通常执行：
+安装依赖并执行检查：
 
 ```bash
-npm install
-npm run check
-npm run build
-npm test
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
+pnpm test
 ```
 
 将构建结果放入 AuraBot 实际加载的模块目录，使用模拟测试或试运行验证。只修改源码而不构建，运行时不会获得新逻辑。

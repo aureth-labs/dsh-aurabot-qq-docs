@@ -1,5 +1,6 @@
 import DefaultTheme from 'vitepress/theme'
 import type { Theme } from 'vitepress'
+import { useData } from 'vitepress'
 import { h } from 'vue'
 import './custom.css'
 import SiteFooter from './components/SiteFooter.vue'
@@ -10,9 +11,14 @@ import MessageFlow from './components/MessageFlow.vue'
 export default {
   extends: DefaultTheme,
   Layout() {
-    return h(DefaultTheme.Layout, null, {
-      'layout-bottom': () => h(SiteFooter),
-    })
+    const { frontmatter } = useData()
+    return h(
+      DefaultTheme.Layout,
+      null,
+      frontmatter.value.layout === 'home'
+        ? { 'layout-bottom': () => h(SiteFooter) }
+        : {},
+    )
   },
   enhanceApp({ app }) {
     app.component('Diagram', Diagram)

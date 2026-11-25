@@ -2,6 +2,10 @@
 
 本页描述当前 TypeScript 模板和 V1 模块接口。V2 的 `ctx` 写法见[V2 插件接口设计](/reference/plugin-api)。
 
+::: warning V1 示例
+以下代码和字段说明属于 V1，仅用于维护现有模块，对当前 V2 开发没有参考价值。V2 插件接口仍在开发中。
+:::
+
 模板使用 `package.json` 作为清单，并在构建时生成兼容市场所需的文件。
 
 ## 目录
@@ -32,6 +36,7 @@ my-plugin/
   "version": "1.0.0",
   "description": "搜索歌曲并发送语音",
   "type": "module",
+  "packageManager": "pnpm@11.1.2",
   "license": "MIT",
   "main": "lib/index.js",
   "aurabot": {
@@ -50,6 +55,7 @@ my-plugin/
 | `name` | 包名，不包含作者名 |
 | `version` | 发布新版本时必须更新 |
 | `type` | 当前发布格式要求为 `module` |
+| `packageManager` | 固定 pnpm 版本；仓库统一使用 pnpm |
 | `main` | 实际加载的 JavaScript 入口 |
 | `aurabot.displayName` | 面板显示名称 |
 | `aurabot.category` | 市场分类 |

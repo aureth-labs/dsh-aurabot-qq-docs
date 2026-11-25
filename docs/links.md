@@ -18,12 +18,12 @@
 | 文件 | 用途 |
 | --- | --- |
 | [llms.txt](https://aureth-labs.github.io/dsh-aurabot-qq-docs/llms.txt) | 插件目录、清单字段、API 和开发步骤 |
-| [deepseekharness.txt](https://aureth-labs.github.io/dsh-aurabot-qq-docs/deepseekharness.txt) | 在本地目录安装 DSH、生成启动与停止脚本并验收 |
+| [deepseekharness.txt](https://raw.githubusercontent.com/aureth-labs/dsh-aurabot-qq-docs/main/docs/public/deepseekharness.txt) | 在本地目录安装 DSH、生成启动与停止脚本并验收 |
 
 部署 DSH 时发送：
 
 ```text
-https://aureth-labs.github.io/dsh-aurabot-qq-docs/deepseekharness.txt
+https://raw.githubusercontent.com/aureth-labs/dsh-aurabot-qq-docs/main/docs/public/deepseekharness.txt
 ```
 
 开发插件时发送 `llms.txt`。两个文件都位于 `public/`，必须使用完整线上地址。

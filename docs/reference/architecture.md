@@ -52,6 +52,7 @@
   "name": "playmusic",
   "version": "1.2.0",
   "type": "module",
+  "packageManager": "pnpm@11.1.2",
   "main": "lib/index.js",
   "aurabot": {
     "displayName": "语音点歌",
@@ -85,7 +86,7 @@ WASM 或原生模块无法打包时，可以在首次运行时下载固定版本
 在市场仓库执行：
 
 ```bash
-npm run market
+pnpm run market
 ```
 
 该命令读取 `registry.jsonl`，生成 `dist/market.json` 和 `dist/report.md`。

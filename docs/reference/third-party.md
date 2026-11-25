@@ -96,6 +96,6 @@ SOFTWARE.
 | Applio / RVC | 见各自仓库 | 翻唱换声 |
 | audio-separator | MIT | 人声与伴奏分离 |
 | `ffmpeg` | LGPL / GPL（取决于构建） | 抽音、混音、缩图 |
-| OneBot v11 实现（SnowLuma 等） | 见各自项目 | QQ 网关 |
+| OneBot v11 服务 | 见所选项目 | QQ 连接 |
 
 分发时应保留各自的许可文件。AuraBot 不提供音色模型，用户需要自行导入并确认使用授权。

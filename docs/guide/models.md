@@ -6,7 +6,7 @@ AuraBot 使用 DSH 中配置的模型服务。开始聊天前，需要确认模�
 
 可以直接配置模型提供商，也可以通过模型网关接入多个提供商。需要模型路由、重试或故障转移时，推荐在模型网关中处理，避免在 DSH 中重复维护这些规则。
 
-本站示例使用 [Magpie](https://github.com/yetone/magpie)。它是独立项目，不属于 AuraBot；安装和配置方法以 [Magpie 文档](https://usemagpie.ai/zh)为准。
+本站示例使用 [Magpie](https://github.com/yetone/magpie)。它是独立项目，既不属于 AuraBot，也不属于 DeepSeek Harness；安装和配置方法以 [Magpie 文档](https://usemagpie.ai/zh)为准。
 
 在 DSH 中打开「设置 → 模型 → 添加模型提供商 → 自定义模型 API」，填写：
 
