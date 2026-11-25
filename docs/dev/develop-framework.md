@@ -220,7 +220,27 @@ WebUI 的 base 组合包已经挂了 `hmr` 行，但默认是：
 面板上有「重新加载」按钮，走的是 `reload(id)`：停实例、清错误、重扫、再启动。
 日志里会打印「模块「xxx」文件改了，重新加载」，没有这行就说明版本戳没变。
 
-还要知道两个限制：
+### 让 TypeScript 源码也吃上 HMR
+
+社区插件也是 TypeScript 写的，凭什么只有宿主能吃 HMR？问题出在**加载的是产物**：
+宿主 import 的是 `lib/index.js`，改 `src` 只会让版本戳变、重载发生，但重新 import 的仍是旧 JS。
+
+DSH 能直接热重载 TS，是因为它的 loader 把 `.ts` 当模块本身加载（tsx / Node 类型剥离）。
+照这个思路，社区插件有三条路：
+
+| 方案 | 做法 | 代价 |
+| --- | --- | --- |
+| A. 宿主按需转译 | 扫到 `src/index.ts` 时，用 esbuild 转成 ESM 写进 `.aurabot-cache/<戳>/index.mjs` 再 import | 宿主多一个 esbuild 依赖 |
+| B. Node 类型剥离 | 直接 `import('…/src/index.ts')`，靠 Node 24 内置剥离 | 只支持可擦除语法，`enum` / 装饰器不行 |
+| C. 插件侧 `tsc --watch` | 开发时常驻 `tsc -w`，产物持续写 `lib/`，现有 3 秒扫描自动接住 | 每个插件多一个进程，零宿主改动 |
+
+推荐 **A 作为默认**（体验对齐 DSH），C 作为兜底（今天就能用），B 只用于临时调试。
+
+A 的落点很具体：`importUser()` 现在把整个目录复制到快照再 import，把入口那一份换成
+「转译后的 ESM」即可，版本戳和重载流程都不用动；同时把入口识别从 `index.mjs` / `index.js`
+扩到 `src/index.ts`。
+
+在 A 落地前，还有两个限制要知道：
 
 - 这套只保证**代码**是新的，不做类型检查。类型错误要自己跑 `npm run check`
 - 版本戳跳过 `node_modules`。社区插件自己装的依赖变了，不会触发重载
