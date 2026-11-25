@@ -1,49 +1,33 @@
 # 发布到市场
 
-写完模块，怎么让别人在面板里搜到它。
+市场保存索引，插件代码和构建产物保存在作者仓库及其 Release 中。
 
-## 两种发布形态
-
-| 形态 | 怎么发 | 装的时候 |
-| --- | --- | --- |
-| 独立模块 | GitHub 仓库 + Release 里放 zip，写进市场索引 | 面板「模块市场」一键装，不用重启 |
-| DSH 组合包 | 当普通 DSH 插件发布 | `dsh plugin add`，装完要重启 |
-
-下面讲的是第一种，也是社区模块的默认形态。
-
-## 市场只存索引
-
-代码始终在作者自己的仓库和 Release 里，市场仓库只放一行链接：
+## 发布流程
 
 ```text
-作者仓库 push
-   └─ Actions：装依赖 → 构建 → 打 zip → 发 Release
-        └─ 回写 package.json.aurabot.artifact{url,sha256,size}
-
-市场仓库
-   registry.jsonl（一行一个 package.json 的 GitHub 链接）
-   └─ 构建：拉取 → 校验 → market.json + report.md
-        └─ 发布到 market 分支
+作者仓库：提交源码 → CI 构建 → 发布 Release → 回写 artifact
+市场仓库：读取 registry.jsonl → 校验 → 生成 market.json
+AuraBot：读取 market.json → 下载并校验 → 安装
 ```
 
-所以作者改代码不用等谁审批，用户装的时候还能核对 `sha256`。
+作者可以独立发版，不需要把每个版本的源码提交到市场仓库。
 
 ## 收录规则
 
-- 包里只写**包名**（如 `playmusic`），id 由市场用仓库 owner 拼成 `owner/name`
-- 同一 owner 下重名，后来的自动加 `-2`、`-3`
-- 只允许 ESM（`"type": "module"`），CJS 直接拒绝
-- 自动收录一律 `verified: false`，是否人工审核看 `verified.json`
-- 撤回某个版本：自己删 Release、改版本号，下次重建就看不到了
+- `package.json` 的 `name` 只写包名，市场结合来源仓库生成完整 ID。
+- 新格式要求 ESM，即 `"type": "module"`。
+- 每个收录条目指向一个有效的 `package.json`。
+- 自动收录不等同于人工安全审核，`verified` 状态按市场配置生成。
+- 删除收录清单中的条目后，下次全量构建会移除对应索引项。
 
-## 提交前自查
+## 提交检查
 
-- [ ] `npm run check` 通过，本地真装过一次
-- [ ] `category` 选好了，跑过目录生成脚本
-- [ ] `capabilities` 如实声明（`network` / `filesystem` / `process` / `plugin-internals` 等）
-- [ ] 会访问的域名写清楚了
-- [ ] 改已有模块时升了 `version`，入口文件和 `module.json` 一致
-- [ ] 代码没有混淆，产物由 CI 从源码构建
-- [ ] 许可证允许分发，第三方代码已署名
+- [ ] 类型检查和测试通过，已在本地实际加载。
+- [ ] `category` 和能力声明符合当前 schema。
+- [ ] README 写明外部服务、域名和必要依赖。
+- [ ] 修改已有插件时已更新 `version`。
+- [ ] `main` 指向实际存在且已构建的入口。
+- [ ] 代码未混淆，产物由 CI 从源码构建。
+- [ ] 许可证允许分发，第三方代码已署名。
 
-字段含义见[模块 API 速查](/reference/module-api)，能力声明的实际含义见[装社区模块](/guide/install-plugin#权限与安全)。
+字段定义见[V1 模块 API](/reference/module-api)，安装侧说明见[安装社区模块](/guide/install-plugin)。

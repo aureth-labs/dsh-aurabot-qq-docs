@@ -1,125 +1,115 @@
-# 主框架改造清单（dsh-aurabot-qq）
+# 主框架改造清单
 
-> 这份清单给**主插件仓库**（`aureth-labs/dsh-aurabot-qq`）用。
-> 市场这边只产出 `market.json` 和规范；下面每一条都要宿主动手改。
-> 原则：新格式（`package.json` + `lib/`）和老格式（`module.json` + `index.mjs`）**并存**，老模块不改也能继续装。
+本文列出新插件市场对主仓库的兼容要求。新的 `package.json`、`lib/` 与 `market.json` 格式应与 V1 的 `module.json`、`index.mjs` 和 `index.json` 并存，避免现有模块失效。
 
-相关：插件写法本身的改造（ctx / schema / 元素 / 消息管线）见 [插件接口 v2](/reference/plugin-api)。
+插件上下文、配置和消息管线的改造见[插件接口 V2](/reference/plugin-api)。本页各项仍属于改造计划，不表示当前版本已经支持。
 
-## 0. 一句话
+## 清单读取
 
-宿主现在认三样：`module.json`、入口文件名 `index.mjs` / `index.js`、`index.json` + `assetsBase` 拼出来的 zip 地址。
-新市场换掉了这三样：`package.json.aurabot`、`package.json.main`、`market.json` 里直接的 `artifact.url + sha256`。
-
-## 1. 元数据来源
-
-### 1.1 先读 package.json，没有就回落 module.json
-
-| | 现在 | 目标 |
+| 项目 | V1 | 目标 |
 | --- | --- | --- |
-| 清单文件 | `modules/<id>/module.json` | `modules/<id>/package.json` 的 `aurabot` 段 |
-| 缺失时 | 模块无效 | 回落读 `module.json`（老模块） |
+| 清单 | `modules/<id>/module.json` | `modules/<id>/package.json` 中的 `aurabot` |
+| 旧格式 | 必须存在 | 缺少新格式时回退读取 |
 
-- [ ] 统一一个 `readManifest(dir)`：优先 `package.json.aurabot`，否则 `module.json`
-- [ ] 面板、市场页、安装器都走这一个函数，不要再各自读文件
-- [ ] 新格式缺 `aurabot.artifact` 时给出明确报错，不要静默跳过
+- [ ] 实现统一的 `readManifest(dir)`，优先读取 `package.json.aurabot`，否则读取 `module.json`。
+- [ ] 面板、市场页和安装器共用该函数。
+- [ ] 新格式缺少 `aurabot.artifact` 时返回明确错误。
 
-**验收**：只放 `package.json` 的模块，列表 / 详情 / 能力标记都正常。
+验收标准：只有 `package.json` 的模块可以正常显示详情、能力声明并参与安装。
 
-### 1.2 字段映射
+### 字段映射
 
-| module.json | package.json | 说明 |
+| `module.json` | `package.json` | 说明 |
 | --- | --- | --- |
-| `id` | `name` | `owner/name` → 平铺名（`owner` 在 market.json 里单独给） |
-| — | `owner` | 新字段，来自收录地址，展示来源 |
-| `name` | `aurabot.displayName`（回落包名） | |
-| `version` | `version` | |
-| `description` | `description` | |
-| `category` | `aurabot.category` | 单选 |
-| `platforms` | `aurabot.platforms` | 缺省 `["qq"]` |
-| `capabilities` | `aurabot.capabilities` | |
-| `minPluginVersion` | `aurabot.minPluginVersion` | |
-| `api` | `aurabot.api` | |
-| `requires` | `aurabot.requires` | |
-| `panel` | `aurabot.panel`（缺省 `./dist/panel.js`） | 相对模块根目录 |
-| `build.out` | 不再需要 | 构建在作者仓库完成 |
+| `id` | `name` | 市场条目的 owner 单独保存 |
+| — | `owner` | 来自收录地址 |
+| `name` | `aurabot.displayName` | 缺省时回退到包名 |
+| `version` | `version` | 语义化版本 |
+| `description` | `description` | 功能说明 |
+| `category` | `aurabot.category` | 单选分类 |
+| `platforms` | `aurabot.platforms` | 缺省为 `["qq"]` |
+| `capabilities` | `aurabot.capabilities` | 能力声明 |
+| `minPluginVersion` | `aurabot.minPluginVersion` | 最低宿主版本 |
+| `api` | `aurabot.api` | 接口版本 |
+| `requires` | `aurabot.requires` | 模块依赖 |
+| `panel` | `aurabot.panel` | 缺省为 `./dist/panel.js` |
+| `build.out` | 不再需要 | 构建由作者仓库完成 |
 
-## 2. 入口解析
+## 入口解析
 
-| | 现在 | 目标 |
+| 项目 | V1 | 目标 |
 | --- | --- | --- |
-| 入口 | 目录下的 `index.mjs` / `index.js` | `package.json` 的 `main`（默认 `lib/index.js`） |
-| 模块类型 | 不检查 | 只支持 ESM（`"type": "module"`），CJS 明确拒绝并提示 |
+| 入口 | 根目录的 `index.mjs` 或 `index.js` | `package.json` 的 `main`，默认 `lib/index.js` |
+| 模块格式 | 不统一检查 | 只支持 ESM，拒绝 CommonJS 并给出提示 |
 
-- [ ] `entryOf(dir)` 改成读 `main`，找不到再回落 `index.mjs` / `index.js`
-- [ ] 加载失败时的报错带上「读的是哪个文件」，别只说「模块加载失败」
-- [ ] 打包/冒烟测试（`scripts/lib.mjs` 的 `ENTRY`）同步改，否则 CI 会按老规则找不到入口（**这条在市场之外的仓库，但会直接卡住新插件**）
+- [ ] `entryOf(dir)` 优先读取 `main`，找不到时回退到旧入口。
+- [ ] 加载错误包含实际读取的文件路径。
+- [ ] 同步修改打包和冒烟测试中的入口判断。
 
-**验收**：入口叫 `main.js`、`dist/entry.js` 都能加载；没有 `index.mjs` 也能跑。
+验收标准：入口位于 `main.js` 或 `dist/entry.js` 时可以加载，不再强制要求 `index.mjs`。
 
-## 3. id：作者写平铺名，市场补 owner
+## 模块标识
 
-| | 现在 | 目标 |
+| 项目 | V1 | 目标 |
 | --- | --- | --- |
-| `package.json.name` | `playmusic` | `playmusic`（作者**不**写前缀） |
-| 对外 id | `playmusic`（= 文件夹名） | `shangxueink/playmusic`（市场按 `entry.owner` + `name` 拼） |
-| 同名不同作者 | 冲突 | 共存 |
+| `package.json.name` | 平铺包名 | 仍由作者填写平铺包名 |
+| 对外 ID | 与目录名相同 | 市场按 owner 和包名组成 `owner/name` |
+| 同名模块 | 冲突 | 不同作者的同名模块可以共存 |
 | 安装目录 | `modules/<id>/` | `modules/<scope>/<name>/` |
 
-- [ ] id 一律按 `owner/name` 解析，`owner` 取 `market.json` 条目的 `owner` 字段（作者没写进 package.json）
-- [ ] 配置文件里的键、面板路由、日志里的模块名都要跟着用 qualified id，否则重名会串
-- [ ] `requires` 解析：先查内置（无前缀），再查 `owner/name`
-- [ ] 老模块保持平铺 id 不变（它们没有 `/`，天然不冲突）
-- [ ] 同一 scope 下重名：市场侧按 `-2`、`-3` 后缀自动改名，宿主按改名后的 id 安装即可
+- [ ] 配置键、面板路由和日志统一使用完整的 `owner/name`。
+- [ ] `requires` 先解析内置模块，再解析完整 ID。
+- [ ] V1 的平铺 ID 保持不变。
+- [ ] 市场在同一 scope 内处理重名，宿主使用最终分配的 ID。
 
-**验收**：`a/music` 和 `b/music` 能同时安装、同时启用、互不覆盖配置。
+验收标准：`a/music` 和 `b/music` 可以同时安装、启用，并分别保存配置。
 
-## 4. 安装协议
+## 安装与校验
 
-| | 现在 | 目标 |
+| 项目 | V1 | 目标 |
 | --- | --- | --- |
-| 索引 | `registry` 分支的 `index.json` | 任一 `market.json`（可多个源） |
-| 地址 | `assetsBase + tag + 文件名` 拼出来 | 每条自带 `artifact.url` |
-| 校验 | 无 | `sha256` + `size`，不一致直接拒绝 |
+| 索引 | `registry` 分支的 `index.json` | 一个或多个 `market.json` |
+| 下载地址 | `assetsBase`、tag 和文件名拼接 | 条目直接提供 `artifact.url` |
+| 完整性 | 无统一校验 | 校验 `sha256` 和 `size` |
 
-- [ ] 下载后先算 sha256、比对大小，不一致就丢弃且保留旧版本
-- [ ] 解压时拒绝绝对路径和 `..`（防 zip slip）
-- [ ] 安装失败要能回滚到上一版，不能留下半个目录
+- [ ] 下载后先计算 SHA-256 并核对大小，不一致时保留旧版本。
+- [ ] 解压时拒绝绝对路径和包含 `..` 的路径。
+- [ ] 安装失败时回滚，不能留下不完整的模块目录。
 
-**验收**：手工改 zip 一个字节 → 安装失败，提示「校验不通过」，旧版本还在。
+验收标准：修改压缩包后安装会被拒绝，旧版本仍可使用。
 
-## 5. 版本与更新
+## 版本与更新
 
-- [ ] 版本比较用 semver（`1.10.0 > 1.9.0`），不要字符串比
-- [ ] `minPluginVersion` 不满足时，明确提示「需要插件 ≥ x.y.z」而不是装完报错
-- [ ] 更新检查只读 `market.json`，不直接访问作者仓库
-- [ ] 市场里消失的插件：保留已装副本，只是不再提示更新（**不等于卸载**）
+- [ ] 使用语义化版本比较，不按字符串比较。
+- [ ] `minPluginVersion` 不满足时，在安装前提示所需的最低版本。
+- [ ] 更新检查只读取 `market.json`，不直接访问作者仓库。
+- [ ] 条目从市场消失后保留本地副本，但不再提示更新。
 
-## 6. 多源
+## 多市场源
 
-- [ ] 配置项 `market.sources: string[]`，官方源放第一个
-- [ ] 合并规则：同 id 先到先得，冲突时在日志里写明哪两个源打架
-- [ ] 每个源单独容错：一个源 502 不该让整个市场空掉
+- [ ] 增加 `market.sources: string[]`，官方源排在第一位。
+- [ ] 同一 ID 按源的顺序处理，冲突时记录来源。
+- [ ] 每个源独立容错，一个源不可用时不影响其他源。
 
-**验收**：配两个源，两边插件都能搜到；断掉一个源，另一个照常。
+验收标准：配置两个源后均可检索；停用其中一个源不影响另一个。
 
-## 7. 来源与审核标记
+## 来源展示
 
-- [ ] 详情页显示 `owner/repo`（来自 `artifact.url` 或 `source`）
-- [ ] `verified: false` 时显示「未审核」标签，安装前二次确认
-- [ ] 显示 `capabilities`（已有能力声明机制，沿用）
+- [ ] 详情页显示 `owner/repo`。
+- [ ] `verified: false` 显示「未审核」，安装前要求确认。
+- [ ] 保留并展示 `capabilities`。
 
-## 8. 待主框架拍板
+## 待确认事项
 
-1. **是否校验 GitHub provenance / attestation**：第一版可以先只校验 sha256
-2. **升级时数据目录**：`data/<id>/` 是否随 id 变更迁移
-3. **老模块的 panel 回落**：`module.json.panel` 继续沿用，新格式统一读 `aurabot.panel`
+1. 是否校验 GitHub provenance 或 attestation；第一阶段可以只校验 SHA-256。
+2. 模块 ID 变化后，是否迁移 `data/<id>/`。
+3. V1 的 `module.json.panel` 回退规则如何长期保留。
 
-已定：只允许 ESM（`"type": "module"`，CJS 直接拒绝）；面板缺省 `./dist/panel.js`；安装目录 `modules/<scope>/<name>/`。
+已确定采用 ESM、默认面板路径 `./dist/panel.js` 和安装目录 `modules/<scope>/<name>/`。
 
-## 9. 明确不属于主框架的部分
+## 仓库职责
 
-- 索引怎么生成、怎么镜像：市场仓库负责
-- 作者仓库怎么构建、Release 怎么发：模板仓库负责
-- 收录审核：市场仓库的 `verified.json` 负责
-
+- 市场仓库负责收录清单和索引生成。
+- 模板仓库负责构建流程和 Release 示例。
+- 市场仓库的 `verified.json` 负责审核标记。
+- 主仓库负责加载、安装、校验和兼容旧模块。

@@ -1,47 +1,51 @@
-# 架构与决策
+# 插件市场架构
 
-## 目标
+本文说明新插件市场的代码托管、构建和索引方案。该方案与 V1 的 `module.json`、`index.json` 安装协议不同，宿主兼容工作见[主框架改造清单](/reference/host-changes)。
 
-把「代码托管」「构建」「索引」拆开，让插件作者不必往官方仓库提 PR 改代码：
+## 职责划分
 
-- 作者：自己的 GitHub 仓库（单模块或多模块都行），自带 Actions 构建
-- 市场：只维护一份 `package.json` 地址清单，拉取、校验、生成 `market.json`
-- 宿主：读 `market.json` 安装，不再关心代码从哪来
+代码、构建产物和市场索引分别维护：
 
-非目标（本仓库不做）：代码托管、运行时依赖管理、宿主加载逻辑。
+- 作者仓库保存源码，并通过 GitHub Actions 构建和发布产物。
+- 市场仓库保存 `package.json` 地址清单，生成并发布 `market.json`。
+- 宿主读取市场索引，下载并校验产物，再加载清单指定的入口。
+
+市场不负责托管插件源码、执行插件构建或管理运行时依赖。
 
 ## 数据流
 
 ```text
-作者仓库 push
-   └─ Actions：npm ci → build → 打 zip → 发 Release
-        └─ 回写 package.json.aurabot.artifact{url,sha256,size}（bot commit，[skip ci]）
+作者仓库提交
+ └─ GitHub Actions：安装依赖、构建、生成压缩包、发布 Release
+     └─ 回写 package.json.aurabot.artifact 中的 url、sha256 和 size
 
 市场仓库
-   registry.jsonl（一行一个 package.json 的 GitHub 链接）
-   └─ npm run market：逐个拉取 → 校验 → market.json + report.md
-        └─ 发布到 Pages / Release / CDN
+ registry.jsonl
+ └─ 市场构建：读取清单、校验字段、生成 market.json 和 report.md
+     └─ 发布索引
 
 宿主
-   market.json → 选版本 → 下载 zip → 校验 sha256 → 解压 → 读 package.json.aurabot → 加载 main
+ market.json
+ └─ 下载压缩包、校验 sha256 和 size、解压
+     └─ 读取 package.json.aurabot，加载 main 指定的入口
 ```
 
 ## 决策记录
 
-| # | 决策 | 理由 |
+| 编号 | 决策 | 原因 |
 | --- | --- | --- |
-| D1 | 代码与索引分离，市场不托管源码 | 避免「改一行也要 PR 到官方仓库」 |
-| D2 | 作者只写包名；市场用来源仓库的 owner 拼成 `owner/name` 当 id | 天然唯一、和 GitHub 身份对齐；作者不用关心自己叫什么，`@` 是 npm 的约定，我们不发布到 npm |
-| D3 | 构建在作者仓库做，产物发 Release | 市场不执行作者代码，供应链风险留在作者侧 |
-| D4 | `package.json` 单一真相，自定义字段放 `aurabot` 段 | npm 工具链兼容；避免和编辑器内置 schema 打架 |
-| D5 | 入口用 `main`，产物在 `lib/` | 不再依赖 `index.mjs` 约定 |
-| D6 | 索引由市场全量重建；清单写错的条目跳过 | 没有「增量状态」要维护，天然自愈；一个作者写错不该卡住整条流水线 |
-| D7 | 收录靠 `registry.jsonl`：一行一个人点的 GitHub 链接，**原样保留** | 作者直接复制浏览器地址；市场只在这条链接上取内容，不改写不落盘 |
-| D8 | 评分：star + 最近提交，口径见下 | 纯 star 对多模块仓库不公平 |
-| D9 | 安全：自动收录一律 `verified: false`，不做背书 | 开放优先；出问题由作者自己管理 Release 与 commit 记录，索引不承担撤回职责 |
-| D10 | 前端源码也写 TS：`client/*.ts` → `dist/`，后台 `src/*.ts` → `lib/` | 一个仓库里前端后端同语言，面板不用手写 JS |
+| D1 | 代码与索引分离，市场不托管源码 | 作者可以独立维护代码和版本 |
+| D2 | 市场使用来源仓库的 owner 与包名组成 `owner/name` | 避免不同作者的同名包冲突 |
+| D3 | 构建在作者仓库完成，产物发布到 Release | 市场不执行作者代码 |
+| D4 | `package.json` 是清单的唯一来源，自定义字段放在 `aurabot` 中 | 保持 npm 工具链兼容，避免维护重复字段 |
+| D5 | 入口由 `main` 指定，后台产物默认放在 `lib/` | 不再依赖固定的 `index.mjs` 文件名 |
+| D6 | 每次全量重建索引，无效条目记入报告并跳过 | 不需要维护增量状态，单条错误不阻塞其他条目 |
+| D7 | `registry.jsonl` 每行保存一个原始 GitHub 地址 | 作者可以直接提交浏览器中的文件地址 |
+| D8 | 排序同时考虑仓库 star、模块数量和最近提交 | 减少多模块仓库仅凭 star 排序造成的偏差 |
+| D9 | 自动收录的条目默认 `verified: false` | 收录不等于安全审核 |
+| D10 | 后台源码使用 `src/*.ts`，面板源码使用 `client/*.ts` | 后台与面板共用 TypeScript 开发方式 |
 
-## package.json 约定
+## 清单格式
 
 ```json
 {
@@ -50,53 +54,61 @@
   "type": "module",
   "main": "lib/index.js",
   "aurabot": {
-    "displayName": "显示名",
+    "displayName": "语音点歌",
     "panel": "./dist/panel.js",
     "category": "social",
     "capabilities": ["network"],
     "minPluginVersion": "1.2.0",
     "api": 1,
     "requires": [],
-    "artifact": { "url": "https://…zip", "sha256": "…", "size": 12345 }
+    "artifact": {
+      "url": "https://example.com/playmusic.zip",
+      "sha256": "<sha256>",
+      "size": 12345
+    }
   }
 }
 ```
 
-完整约束见 `schemas/package.schema.json`。
+完整字段约束以市场仓库的 `schemas/package.schema.json` 为准。`artifact` 由作者仓库的自动化流程回写，市场只读取。`panel` 缺省为 `./dist/panel.js`。
 
-`artifact` 由作者仓库的 Actions 回写；市场只读不写。`panel` 缺省为 `./dist/panel.js`。
-
-`name` 只写包名本身，市场从收录地址里的 GitHub 路径取 owner，拼成 `owner/name`；作者不需要也没必要自己加前缀。
+`name` 只写包名，不添加作者前缀。市场从收录地址确定 owner，再组成 `owner/name`。
 
 ## 依赖策略
 
-- 默认：构建期打包进 `lib/`（esbuild `bundle: true`），运行时不装依赖
-- 例外：wasm / 原生模块打不进单文件的（`meme` 那类），允许「首次运行下载固定版本运行时」，但必须在 README 写明下载地址和 sha256
-- 明确不支持：运行时装 `node_modules`
+默认在构建时使用 esbuild 将依赖打包进 `lib/`，安装后不再执行依赖安装。
 
-## 市场构建
+WASM 或原生模块无法打包时，可以在首次运行时下载固定版本的运行时，但必须在 README 中写明来源和 SHA-256。市场不支持在插件安装后创建 `node_modules`。
+
+## 索引构建
+
+在市场仓库执行：
 
 ```bash
-npm run market          # registry.jsonl → dist/market.json + dist/report.md
+npm run market
 ```
 
-- 单条失败只记进报告并跳过，不影响其它条目、也不让流水线变红（`--strict` 才按失败处理）
-- `verified.json` 里列出的 id 标 `verified: true`
-- 下架：把 `registry.jsonl` 里那行删掉，下次构建自然消失
-- 作者撤回某个版本：自己删对应 Release、改 `package.json` 的版本号；市场每次全量重建，下一次构建就看不到它了
+该命令读取 `registry.jsonl`，生成 `dist/market.json` 和 `dist/report.md`。
 
-## 评分口径（草案）
+- 单条失败默认只写入报告；使用 `--strict` 时才将失败作为构建错误。
+- `verified.json` 中的条目标记为 `verified: true`。
+- 删除收录清单中的一行后，该条目会在下次全量构建时移除。
+- 作者删除 Release 或修改版本后，下一次索引构建反映最新可读取状态。
 
-- 主展示：仓库 star
-- 排序参考：`log10(stars) / sqrt(该仓库插件数)`，对多模块仓库温和惩罚
-- 辅助：最近一次提交距今时间
-- 以后有遥测再加下载量
+## 排序草案
+
+排序方案尚未定稿，当前草案使用以下信息：
+
+- 页面展示仓库 star 数。
+- 排序参考 `log10(stars) / sqrt(仓库中的模块数)`。
+- 辅助参考最近一次提交时间。
+
+下载量需要在有可靠统计数据后再加入，不能使用估算值。
 
 ## 安全边界
 
-1. 市场不执行作者代码（构建在作者仓库）
-2. 市场只做静态校验：字段、URL 形态、sha256 格式
-3. 宿主负责下载后校验 sha256 与大小
-4. 自动收录一律标 `verified: false`，安装时提示来源
-5. 不做撤回/下架通知：作者管理自己的 Release 与 commit，索引只反映「现在能拉到什么」
-
+1. 市场不执行作者代码。
+2. 市场只检查字段、URL 和 SHA-256 格式。
+3. 宿主下载后校验 SHA-256 和文件大小。
+4. 自动收录不等于审核通过，安装界面应显示审核状态。
+5. 索引只反映本次构建时可读取的发布状态，不提供撤回通知。

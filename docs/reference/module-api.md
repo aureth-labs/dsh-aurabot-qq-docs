@@ -1,11 +1,16 @@
-# 模块 API 速查
+# V1 模块 API
 
-模块是 AuraBot 的最小功能单位：表情包、语音、心情、记忆、空间、B 站、翻唱、生图都是模块。
-你写的模块放在数据目录 `modules/<id>/`，升级不覆盖，保存即生效。
+本文记录 AuraBot V1 的公开模块接口。V2 插件采用 `apply(ctx, config)`，不要把两套接口混写，设计见[插件接口 V2](/reference/plugin-api)。
 
-完整版一直在你的数据目录里：`%USERPROFILE%\.dsh\plugins-data\aurabot\modules\API.md`（插件每次启动更新，**别改它**）。
+V1 用户模块位于 AuraBot 数据目录的 `modules/<id>/`，主仓库升级不会覆盖该目录。完整接口文件由 AuraBot 启动时更新：
 
-## 模块长什么样
+```text
+%USERPROFILE%\.dsh\plugins-data\aurabot\modules\API.md
+```
+
+该文件由程序生成，不要直接修改。
+
+## 模块入口
 
 ```js
 /** @type {import('../aurabot').AurabotModule} */
@@ -14,7 +19,7 @@ export default {
   name: '查天气',
   version: '0.1.0',
   api: 1,
-  description: '一句话说明',
+  description: '查询指定城市的天气',
   defaults: { city: '北京' },
   settings: [{ key: 'city', label: '城市', type: 'text' }],
   panel: 'panel.js',
@@ -32,171 +37,196 @@ export default {
 
 | 字段 | 说明 |
 | --- | --- |
-| `id` | 小写字母开头，小写字母 / 数字 / `-`，2 到 40 字，**和文件夹同名** |
-| `api` | 按哪一版扩展接口写的，现在是 `1` |
-| `settings` | 面板自动生成表单 |
-| `panel` | 自定义面板，写 `'panel.js'` 或 `true` |
-| `tab` | 把这个模块的设置并进哪个内置页（`voice` `song` `bili` `mood` …），不写就独占一页 |
-| `setup(api)` | 启动时调一次，可以 async；返回值就是这个模块的**导出** |
+| `id` | 以小写字母开头，只含小写字母、数字和 `-`，长度为 2 到 40 个字符，与目录名一致 |
+| `api` | 模块接口版本，当前为 `1` |
+| `settings` | 自动生成面板表单的字段描述 |
+| `panel` | 自定义面板入口，可写 `'panel.js'` 或 `true` |
+| `tab` | 将设置并入指定内置页面；不填写时使用独立页面 |
+| `setup(api)` | 启动时调用，可以是异步函数；返回值作为模块导出 |
 
-入口文件叫 `index.mjs`（或 `index.js`，ESM）。文件夹以 `_` 或 `.` 开头的不加载。
-模块可以拆多个文件，任何文件改动都会在几秒内整体重载——插件先把文件夹快照到 `modules/<id>/.aurabot-cache/` 再加载，**这个目录别动**。
+入口为 `index.mjs` 或 `index.js`，使用 ESM。以 `_` 或 `.` 开头的目录不会加载。目录内文件变化后，AuraBot 会创建快照并重新加载整个模块，不要修改 `.aurabot-cache/`。
 
-## 发消息
+## 发送消息
 
-| 接口 | 作用 |
+| 接口 | 说明 |
 | --- | --- |
-| `api.send(chatId, text)` | 用她平时的方式发：会拆条，支持 `<voice>` `<sticker:名字>` `<poke>`，会经过 `reply` 事件 |
-| `api.sendText(chatId, text)` | 原样发一条文字 |
-| `api.reply(msg, text)` | 回某一条：群里以引用回复发出，私聊直接发 |
-| `api.sendImage(chatId, 路径或网址)` | 发图 |
-| `api.sendFile(chatId, 路径, 文件名?)` | 当文件发（要先开「发文件」） |
-| `api.sendVoiceFile(chatId, 音频文件)` | 把音频文件当语音条发 |
-| `api.sendSegments(chatId, [...])` | 发任意 OneBot 消息段 |
-| `api.onebot(action, params)` | 直接调 OneBot 接口 |
+| `api.send(chatId, text)` | 按聊天流程拆分并发送；支持 `<voice>`、`<sticker:名字>` 和 `<poke>`，经过 `reply` 事件 |
+| `api.sendText(chatId, text)` | 发送一条纯文本 |
+| `api.reply(msg, text)` | 回复指定消息；群聊使用引用，私聊直接发送 |
+| `api.sendImage(chatId, source)` | 发送本地路径或 URL 指向的图片 |
+| `api.sendFile(chatId, path, filename?)` | 发送文件，需要先启用文件发送 |
+| `api.sendVoiceFile(chatId, path)` | 将音频文件作为语音发送 |
+| `api.sendSegments(chatId, segments)` | 发送 OneBot 消息段 |
+| `api.onebot(action, params)` | 调用 OneBot 接口 |
 
-`chatId` 是 `private:QQ号` 或 `group:群号`。判断主人用 `api.isOwner(msg.userId)`。
+`chatId` 使用 `private:<QQ号>` 或 `group:<群号>`。`api.isOwner(msg.userId)` 用于判断发言人是否为主人。
 
-## 用模型
+## 调用模型
 
-| 接口 | 作用 |
+| 接口 | 说明 |
 | --- | --- |
-| `api.ask({ system, text, maxTokens })` | 问一次模型，不带人格、不进会话 |
-| `api.think(prompt, { title, timeoutMs })` | 让**她**（带人格与记忆）想一想，返回回答但不发送 |
+| `api.ask({ system, text, maxTokens })` | 独立调用一次模型，不加入人格，不写入当前会话 |
+| `api.think(prompt, { title, timeoutMs })` | 带人格和记忆生成回答，但不自动发送 |
 
-联网直接用 Node 的 `fetch`，记得 `AbortSignal.timeout(8000)`。
+网络请求可以使用 Node.js 的 `fetch`。应设置超时，例如 `AbortSignal.timeout(8000)`。
 
-## 往插件里加东西
+## 注册能力
 
-都返回一个「撤掉」函数，模块停下时自动撤。
+以下注册接口返回清理函数，模块停止时也会自动清理：
 
-| 接口 | 作用 |
+| 接口 | 说明 |
 | --- | --- |
-| `api.on(事件, fn)` | 听事件 |
-| `api.emit(事件, ...)` | 给别的模块发事件 |
-| `api.tool(fn)` / `api.defineTool({...})` | 给她加 AI 工具 |
-| `api.context(fn)` | 每轮聊天前塞进上下文的话 |
-| `api.rule(fn)` | 补一条规则（进系统提示词，每轮重新调用） |
-| `api.command({ name, aliases, desc, run })` | 主人发 `/名字` 时触发，返回的文字回到发命令的那个聊天 |
-| `api.every(ms, fn, 名字?)` / `api.later(ms, fn)` | 定时 / 延时 |
-| `api.route('/路径', handler)` | 加一个 `/aurabot/api/ext/<id>/路径` 接口 |
-| `api.onDispose(fn)` | 收尾 |
+| `api.on(event, fn)` | 监听事件 |
+| `api.emit(event, ...args)` | 触发供其他模块监听的事件 |
+| `api.tool(fn)` / `api.defineTool(definition)` | 注册模型工具 |
+| `api.context(fn)` | 在每轮对话前补充上下文 |
+| `api.rule(fn)` | 在每轮系统提示词中补充规则 |
+| `api.command({ name, aliases, desc, run })` | 注册主人指令，返回文本发送到指令来源会话 |
+| `api.every(ms, fn, name?)` / `api.later(ms, fn)` | 注册定时或延时任务 |
+| `api.route(path, handler)` | 注册 `/aurabot/api/ext/<id>/<path>` 接口 |
+| `api.onDispose(fn)` | 注册停止时的清理逻辑 |
 
-配置相关：`api.config()` 读整份配置，`api.setConfig(patch)` 改；`api.settings()` / `api.saveSettings()` 管本模块设置；`api.dataDir()` 拿本模块数据目录。
+配置与数据接口：
+
+| 接口 | 说明 |
+| --- | --- |
+| `api.config()` / `api.setConfig(patch)` | 读取或修改框架配置 |
+| `api.settings()` / `api.saveSettings()` | 读取或保存当前模块设置 |
+| `api.dataDir()` | 获取当前模块的数据目录 |
 
 ## 事件
 
-**能接管消息的**：
+可以消费或拦截消息的事件：
 
-| 事件 | 参数 | 返回 |
+| 事件 | 参数 | 返回值 |
 | --- | --- | --- |
-| `message` | `msg` | `true` = 我接管，她不再处理 |
-| `poke` | 原始事件 | `true` = 我接管 |
-| `reply` | `text, { chatId, userText }` | 新文字 = 改写，`null` = 这次不发 |
+| `message` | `msg` | `true` 表示消费，不再进入后续聊天处理 |
+| `poke` | 原始事件 | `true` 表示消费 |
+| `reply` | `text, { chatId, userText }` | 新字符串用于改写，`null` 表示取消发送 |
 
-`message` 在「回不回」的决定**之前**就到，所以没人 @ 她的消息你也能接。
+`message` 在群聊回复决策之前触发，因此可以处理没有提及机器人的消息。
 
-**改她怎么想、怎么说的**（返回新值就替换，`null` 拦下，不返回就不改）：
+以下钩子可以修改生成和发送过程。返回新值表示替换，返回 `null` 表示拦截，不返回值表示保持不变：
 
-| 事件 | 改什么 |
+| 事件 | 修改内容 |
 | --- | --- |
-| `group/decide` | 群里这条回不回、怎么回（`must` / `engaged` / `interject`） |
-| `prompt` | 交给她的内容，可以加背景、去图片 |
-| `reply/items` | 拆好的回复条目（文字 / 语音 / 表情 / 图片） |
-| `send` | 最终发给 QQ 的消息段 |
-| `model` | 这个聊天用哪个模型（同步） |
-| `persona` | 她的人格全文（同步） |
-| `rules` | 她的规则全文（同步） |
+| `group/decide` | 群聊是否回复及回复方式：`must`、`engaged` 或 `interject` |
+| `prompt` | 提交给模型的内容 |
+| `reply/items` | 拆分后的文本、语音、表情或图片条目 |
+| `send` | 最终发送到 QQ 的消息段 |
+| `model` | 当前会话使用的模型，同步执行 |
+| `persona` | 人格文本，同步执行 |
+| `rules` | 规则文本，同步执行 |
 
-**只看不改的**：`activity`、`onebot`、`onebot/state`、`config`、`module/start`、`module/stop`、`song/sung`。
+只读通知事件包括 `activity`、`onebot`、`onebot/state`、`config`、`module/start`、`module/stop` 和 `song/sung`。
 
-`msg` 的关键字段：
+消息对象的主要字段：
 
 ```js
 {
   kind: 'private' | 'group',
   chatId: 'private:123' | 'group:456',
-  userId, groupId, nickname, role,
-  text, messageId, mentioned, replyId,
-  images, stickers, records, forwards, raw,
+  userId,
+  groupId,
+  nickname,
+  role,
+  text,
+  messageId,
+  mentioned,
+  replyId,
+  images,
+  stickers,
+  records,
+  forwards,
+  raw,
 }
 ```
 
-`text` 是纯文字：@ 她的那段去掉了，@ 别人写成「@昵称」，图片写成「[图片]」。**引用的内容不在里面**，要的话用 `replyId` 去 `get_msg` 拿。
+`text` 是纯文本视图：对机器人的提及时移除，提及其他用户时保留为「@昵称」，图片表示为「[图片]」。引用消息的内容不在 `text` 中，需要使用 `replyId` 调用 `get_msg` 获取。
 
-## 工具
+## 模型工具
 
 ```js
 api.tool(({ chat, level, sessionId }) => {
   if (chat.kind === 'system') return []
   return api.defineTool({
     name: 'weather_now',
-    description: '查某个城市现在的天气。别人问天气时用。',
-    properties: { city: { type: 'string', description: '城市名' } },
+    description: '查询指定城市的当前天气',
+    properties: {
+      city: { type: 'string', description: '城市名' },
+    },
     required: ['city'],
-    execute: async ({ city }) => ({ ok: true, message: `${city} 晴 20 度` }),
+    execute: async ({ city }) => ({
+      ok: true,
+      message: `${city} 晴，20 度`,
+    }),
   })
 })
 ```
 
-| 参数 | 含义 |
+| `level` | 使用场景 |
 | --- | --- |
-| `level: 'full'` | 主人私聊，完整权限 |
-| `level: 'social'` | 群聊和别人私聊 |
-| `level: 'chat'` | 没有工具 |
+| `full` | 主人私聊，具有完整工具权限 |
+| `social` | 群聊和其他用户私聊 |
+| `chat` | 不提供工具 |
 
-只想给主人用：在 `execute` 里判断 `api.core.hub.turnSendersAllOwner(sessionId)`。
-**别用 `turnHasOwner`**——它只表示本轮「有人是主人」，主人和群友同轮时别人能借权。
+只允许主人执行的工具，应在 `execute` 内调用 `api.core.hub.turnSendersAllOwner(sessionId)` 校验。`turnHasOwner` 只表示本轮存在主人，不能防止同一轮中的其他用户借用权限。
 
-工具的名字和描述尽量别常改，改一次模型侧的缓存就失效一次。
+工具名称和描述会影响模型侧缓存，不应频繁修改。
 
 ## 面板
 
-写了 `settings` 就自动生成表单：
+`settings` 支持自动生成表单：
 
 ```js
 settings: [
-  { key: 'city', label: '城市', type: 'text', hint: '小字说明' },
-  { key: 'times', label: '每天几次', type: 'number', min: 0, max: 10 },
-  { key: 'on', label: '开关', type: 'switch' },
+  { key: 'city', label: '城市', type: 'text', hint: '城市名称' },
+  { key: 'times', label: '每天次数', type: 'number', min: 0, max: 10 },
+  { key: 'on', label: '启用', type: 'switch' },
   { key: 'mode', label: '模式', type: 'select', options: ['a', 'b'] },
   { key: 'key', label: 'API Key', type: 'password' },
 ]
 ```
 
-自己画面板就放 `panel.js`，拿 `React` / `h` / `ui` / `call`，最后 `return` 一个组件：
+自定义面板入口提供 `React`、`h`、`ui` 和 `call`，并返回组件：
 
 ```js
 const { useState } = React
+
 return function Panel({ settings, save, toast }) {
-  return h(ui.Card, { title: '我的面板' },
-    h('p', null, '城市：' + settings.city),
-    h(ui.Btn, { onClick: async () => toast((await call('/hi')).message) }, '调一下接口'))
+  return h(
+    ui.Card,
+    { title: '天气设置' },
+    h('p', null, `城市：${settings.city}`),
+    h(ui.Btn, {
+      onClick: async () => toast((await call('/hi')).message),
+    }, '测试接口'),
+  )
 }
 ```
 
-`ui` 里有 `Card` `Btn` `Switch` `Row` `Empty` `Select`。
+`ui` 提供 `Card`、`Btn`、`Switch`、`Row`、`Empty` 和 `Select`。
 
-## 替换内置模块
+## 替换与调用模块
 
-写一个**同名**的模块，内置的就不加载了。面板「已安装」页也能对内置模块点「复制一份来改」，源码会复制到 `modules/<id>/`。
+用户模块与内置模块同名时，用户模块替代内置实现。面板的「已安装」页面也可以将内置模块复制到 `modules/<id>/` 后修改。
 
-内置模块导出的东西可以 `api.use('voice')` 拿到，比如：
+`api.use('<id>')` 获取其他模块的导出。常用导出包括：
 
-| id | 导出 |
+| ID | 导出 |
 | --- | --- |
-| `voice` | `speak(文字)` |
-| `mood` | `state()` `label()` `nudge()` `contextLine()` |
-| `memory` | `add()` `recall()` `list()` `remove()` `contextFor()` |
-| `stickers` | `match()` `pickForReply()` `addFromBuffer()` `rename()` |
+| `voice` | `speak(text)` |
+| `mood` | `state()`、`label()`、`nudge()`、`contextLine()` |
+| `memory` | `add()`、`recall()`、`list()`、`remove()`、`contextFor()` |
+| `stickers` | `match()`、`pickForReply()`、`addFromBuffer()`、`rename()` |
 
-用的时候再拿，别在 `setup` 里存着——对方可能被关掉或替换。懒人写法是 `api.lazy('memory')`，每次访问都去找当时在跑的那个。
+在需要时获取模块，不要在 `setup` 中长期保存实例，因为目标模块可能被停用或替换。`api.lazy('memory')` 可以在每次访问时解析当前实例。
 
-## 升级会不会坏
+## 接口稳定性
 
-| 你用的东西 | 稳定性 |
+| 使用范围 | 兼容性 |
 | --- | --- |
-| `api.*` 公开接口 | 按 `api` 版本走，升级保持兼容 |
-| `api.core` / `api.dsh` / `api.lib()` | 插件内部接口，**升级后可能变** |
+| `api.*` 公开接口 | 按 `api` 版本维护兼容 |
+| `api.core`、`api.dsh`、`api.lib()` | 主仓库内部接口，升级可能变化 |
 
-用了 `plugin-internals` 就在 README 里写清楚，别让用户以为它永远不坏。
+使用内部接口时，应在 README 中声明 `plugin-internals` 能力和版本要求。

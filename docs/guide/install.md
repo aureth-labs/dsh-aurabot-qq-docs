@@ -1,34 +1,30 @@
-# 装 DeepSeek Harness
+# 安装 DeepSeek Harness
 
-AuraBot 不是独立程序，它是 **DeepSeek Harness（简称 DSH）** 的插件，所以先把宿主跑起来。
-Node.js 还没装的先看[准备](/guide/prepare)。
+先安装并启动 DSH，再安装 AuraBot。Node.js 环境见[安装准备](/guide/prepare)。
 
-## 三种方式任选其一
+## 选择安装方式
 
-不用三条都走，挑一条适合你的。
+::: details 桌面版
+从 [DSH Releases](https://github.com/deepseek-ai/deepseek-harness/releases) 下载 Windows 安装包并完成安装。
 
-::: details 桌面版安装包（Windows，最省事）
-从 [DSH Releases](https://github.com/deepseek-ai/deepseek-harness/releases) 下载 Windows 安装包，装完直接打开。
-
-桌面版的命令行藏在：
+桌面版的命令行入口通常位于：
 
 ```text
 %LOCALAPPDATA%\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd
 ```
 
-后面文档里凡是写 `dsh ...` 的地方，桌面版换成这个完整路径。
+使用命令行时，将文档中的 `dsh` 替换为该文件的完整路径。
 :::
 
-::: details `npx` 一行启动（任意装了 Node.js 的机器）
+::: details npx
 ```bash
 npx @deepseek-ai/dsh web
 ```
 
-默认在 `http://127.0.0.1:3080` 起服务并自动开浏览器；不想自动开就加 `--no-open`。
-通过 SSH 远程跑时只打印地址，端口转发交给你的 SSH 客户端。
+默认地址为 `http://127.0.0.1:3080`。添加 `--no-open` 可禁止自动打开浏览器。
 :::
 
-::: details 源码（要改 DSH 本身时）
+::: details 源码
 ```bash
 git clone https://github.com/deepseek-ai/deepseek-harness.git
 cd deepseek-harness
@@ -37,29 +33,25 @@ pnpm run build
 pnpm dsh web
 ```
 
-只有调插件加载顺序、或要改 DSH 自身行为时才需要这种方式。
+此方式用于修改 DSH 或排查插件加载问题。
 :::
 
-## 确认跑起来了
+## 检查运行状态
 
-浏览器能打开 Web UI，左侧出现会话列表，选一个工作区之后输入框可用——到这一步宿主就算好了。
+打开 Web UI，选择一个工作区，确认能够新建会话并输入消息。
 
-## 第一次打开
+首次使用可以登录 DSH 账号，也可以配置自己的模型服务。模型配置见[配置模型](/guide/models)。
 
-**不用急着填 API 密钥**，两条路都行：
+DSH 仍处于开发阶段，菜单名称和启动参数可能随版本变化。以当前安装版本和[官方文档](https://deepseek-harness.github.io/deepseek-harness/)为准。
 
-- 直接登录 DSH 账号，用官方提供的模型，开箱就能聊
-- 接自己的密钥，或者接一个网关把多家模型挂在一起
+## 交给 AI 安装
 
-我们推荐第二种里的**网关方案**：用 [Magpie](https://github.com/yetone/magpie) 把模型都收在一个入口，
-DSH 只认它一个地址。Magpie 是独立项目，**不属于 AuraBot，也不由我们维护**，只是我们在用的组合方式。
+如果由具备终端权限的 AI 助手部署，可以直接发送这份说明：
 
-::: warning 模型路由别塞进 DSH
-重试、故障转移、按任务挑模型这类逻辑，交给网关做。DSH 里配得越复杂，出问题时越难定位——
-而网关挂了只需要看一个地方。
-:::
+```text
+https://aureth-labs.github.io/dsh-aurabot-qq-docs/deepseekharness.txt
+```
 
-## 版本提示
+它包含环境检查、本地 npm 安装、Windows 启动与停止脚本、验收和回滚要求。该说明采用独立目录安装，默认 Node.js 版本为 24.9.0 或更高，与本页的 `npx` 快速启动方式不同。
 
-DSH 还在 developer preview，菜单名和参数会变。文档里的名字以你装到的那版为准，
-对不上就看 [官方文档站](https://deepseek-harness.github.io/deepseek-harness/)。
+使用前应先阅读全文。执行者需要遵守其中的目录保护、进程校验和凭据处理要求；涉及安装 Node.js、批准安装脚本或修改现有目录时，应先获得你的确认。

@@ -1,36 +1,35 @@
-# 插件接口 v2：ctx、schema 与消息管线
+# V2 插件接口设计
 
-这页解决一个问题：**插件以后怎么写，宿主为此要改什么，按什么顺序改。**
+本文记录 AuraBot V2 的插件接口约定和主仓库实施顺序。除明确标注为 V1 兼容行为的内容外，本页均为设计稿，不表示当前版本已经实现。
 
-现状的问题一句话：`api` 已经是个上下文对象的雏形（`api.on` / `api.tool` / `api.settings`），
-但它没有名字、没有生命周期、没有服务树，配置也只能写成平铺数组 `{ key, label, type }`。
-目标不是再造一个 Koishi，而是把这几块补齐，让写 AuraBot 插件的手感和写 Koishi 插件一致。
+V1 已有 `api.on()`、`api.tool()` 和 `api.settings()`，但缺少统一的插件上下文、生命周期和结构化消息。V2 保留现有模块的兼容入口，同时将新插件统一为 `apply(ctx, config)`。
 
-## 目标与非目标
+## 目标与边界
 
-**目标**
+设计目标：
 
-- 插件写法统一成 `export const config` + `export function apply(ctx, config)`
-- 配置由 schema 描述（含 `disabled` / `experimental` 这类元信息），面板自动生成；`panel.js` 只在需要自定义 WebUI 时出现
-- 插件有生命周期：定时器、监听器随插件卸载自动清
-- 消息从纯字符串升级成元素树，支持 `h.text` / `h.image` / `h.voice` / `h.forward`
-- 一条消息可以有多个消费者（中间件 / 指令 / AI），消费与否是显式语义
+- 使用 `export const config` 和 `export function apply(ctx, config)` 定义插件。
+- 通过 Schema 自动生成配置面板，并支持 `disabled`、`experimental` 等元信息。
+- 通过 Cordis 生命周期回收事件、定时器和其他资源。
+- 使用元素树表达文本、媒体和合并转发等消息内容。
+- 明确指令、中间件和模型工具的不同触发方式。
+- 让业务代码通过 Bot 和 Session 处理具体机器人及会话。
 
-**非目标**
+不在该设计中：
 
-- 不把 Koishi 运行时（`koishi` 包、数据库、console）装进宿主进程
-- 不追求任意 Koishi 插件二进制兼容；只保证 API 同名同形
-- 不在本仓库实现宿主；本仓库只出规范、模板和检查脚本
+- 不在 AuraBot 进程内运行完整的 Koishi 应用。
+- 不承诺兼容依赖 Koishi 数据库、Console 或其他专有服务的现有包。
+- 不在文档仓库实现主仓库代码。
 
-## 三个概念
+## 核心对象
 
-| 概念 | 是什么 | 谁创建 |
+| 对象 | 含义 | 创建方 |
 | --- | --- | --- |
-| 插件 | 一个 `apply(ctx, config)`，有名字、有版本、有配置 | 作者 |
-| ctx | 宿主给插件的受控上下文：配置、日志、指令、工具、定时器、bot 列表 | 宿主，按插件隔离 |
-| session | 一次具体的会话上下文：哪个 bot、哪个群、谁说的、说了什么 | 宿主，每条消息一个 |
+| 插件 | 导出名称、配置和 `apply` 的代码包 | 插件作者 |
+| `ctx` | 当前插件的受控上下文，提供配置、日志、注册接口和 Bot 列表 | 宿主，按插件实例隔离 |
+| `session` | 一次消息处理上下文，包含来源 Bot、平台、用户、频道和内容 | 宿主，每条入站消息创建 |
 
-ctx 是「插件级的」，session 是「消息级的」。多机器人场景下，**session 自带 bot**，这是寻址不歧义的前提。
+`ctx` 属于插件实例，`session` 属于一次消息处理。Session 携带来源 Bot，主动发送时不会因存在多个机器人而失去目标。
 
 ## 插件入口
 
@@ -46,19 +45,20 @@ export const config = Schema.object({
 })
 
 export function apply(ctx, config) {
-  // 注册指令、工具、中间件、定时器
+  ctx.command('song <keyword:text>')
+    .action(async ({ session }, keyword) => {
+      await session.send(`正在搜索：${keyword}`)
+    })
 }
 ```
 
-`api: 1` 的老插件不需要改：`export default { settings, setup(api) }` 由适配器接在同一个 ctx 上跑。
+V1 的 `export default { settings, setup(api) }` 通过兼容层加载，不要求现有模块立即改写。
 
-`apply` 可以是 `async`。模板仓库把 `command` / `middleware` 的签名定为 `async (session, next) => {}`：
-写成同步函数也能跑，代价是阻塞整条消息管线，所以默认一律异步。
-发消息、请求、读写文件这些对外动作都返回 Promise，统一 `await`。
+`apply` 可以是异步函数。模板中的指令和中间件默认使用 `async (session, next) => {}`；也允许注册同步函数，但同步函数中的耗时操作会阻塞消息处理。发送、网络请求和文件操作应使用 `await`。
 
-### 配置的元信息
+### 配置元信息
 
-配置项不只有类型和默认值，还要能带元信息——这套直接照 Koishi 的 `Schema.meta()`：
+配置描述采用与 Koishi 一致的 Schema 元信息形式：
 
 ```ts
 export const config = Schema.object({
@@ -70,87 +70,89 @@ export const config = Schema.object({
     .description('单次点歌最长时长（分钟）'),
   voiceOnly: Schema.boolean().default(false)
     .experimental()
-    .description('只推语音'),
+    .description('只发送语音'),
   internalToken: Schema.string()
     .role('secret')
     .disabled()
-    .description('由宿主注入，不要手填'),
+    .description('由宿主注入'),
 })
 ```
 
-| 元信息 | 面板表现 |
+| 元信息 | 面板行为 |
 | --- | --- |
-| `description()` | 字段下方说明 |
-| `default()` / `required()` | 初始值 / 必填校验 |
-| `disabled()` | 置灰只读，提交时不接受修改 |
-| `hidden()` | 不渲染，但值仍然参与校验 |
-| `deprecated()` | 标「已废弃」，仍可改 |
-| `experimental()` | 标「实验性」，默认折叠 |
-| `role('secret')` | 输入框打码 |
+| `description()` | 在字段下方显示说明 |
+| `default()` / `required()` | 设置默认值或执行必填校验 |
+| `disabled()` | 字段只读，不接受提交修改 |
+| `hidden()` | 不显示字段，但值仍参与校验 |
+| `deprecated()` | 标记为已废弃，仍允许修改 |
+| `experimental()` | 标记为实验性，默认折叠 |
+| `role('secret')` | 对输入内容打码 |
 
-`experimental()` 是「能用但不保证稳定」的显式声明；`middlewareAfterCommand` 那类
-「开发中」配置项用同一套机制，前端负责显示标记。
+`experimental()` 对应 Koishi 的实验性配置语义。仍在开发中的全局配置也使用该标记，不能只写在文档里。
 
-有了元信息，**普通插件只写 `config` 就够了**，不再需要 `panel.js`。
+普通插件只需要导出 `config`，不需要另外编写 `panel.js`。
 
-### `panel.js` 只留给自定义 WebUI
+### 自定义面板
 
-要加自定义页面（图表、批量操作、独立路由）的插件才需要它。形态和 Koishi console 扩展一致：
-`panel.js` 是**前端入口**，构建产物是 `dist/index.js`，宿主在面板里动态加载；
-它拿到的是前端侧的最小上下文，能注册页面和菜单，要数据只能走宿主暴露的接口，不能直接碰后端。
+图表、批量操作或独立页面可以使用自定义前端入口。入口源码经过构建生成 `dist/index.js`，由面板动态加载。
 
-## ctx 面
+前端代码只获得面板侧的最小上下文，可以注册页面和菜单，通过宿主公开接口读取数据，不能直接访问后端上下文。
+
+## Context 接口
 
 | 成员 | 用途 |
 | --- | --- |
-| `ctx.config` | 本插件的配置（schema 校验后的对象） |
-| `ctx.root.config` | 全局配置，见「全局配置」 |
-| `ctx.logger` | 带插件名前缀的日志 |
-| `ctx.command()` | 注册指令：在中间件之前匹配，用户直接触发，不必等模型决定；执行结果照常回写上下文，AI 知道发过什么 |
-| `ctx.tool()` | 注册给 AI 调用的工具；用户不能直接调，必须由模型决定调用并传参 |
+| `ctx.config` | 当前插件经过 Schema 校验的配置 |
+| `ctx.root.config` | 框架全局配置 |
+| `ctx.logger` | 带插件名称的日志接口 |
+| `ctx.command()` | 注册指令；用户可直接触发，不需要先进入模型会话，执行结果可以回写模型上下文 |
+| `ctx.tool()` | 注册模型工具；用户不能直接调用，由模型决定调用并传入参数 |
 | `ctx.middleware()` | 注册消息中间件 |
-| `ctx.server` | HTTP 服务：`get` / `post` / `put` / `patch` / `delete` / `head` / `options` / `all`，给面板 `call()` 取数据；就是 Koishi 那个 `ctx.server`，不另造路由 |
-| `ctx.on()` / `ctx.emit()` | 监听 / 触发事件。宿主内置事件按白名单暴露；插件之间可以自定义事件名互发 |
-| `ctx.setInterval()` / `ctx.setTimeout()` | 定时器，注册进当前插件的 effect 作用域；卸载时由宿主统一回收（cordis 式生命周期，作者不用手写 `clearInterval`） |
-| `ctx.bots` | bot 列表：`ctx.bots[0]`；按 id 取用 `ctx.bots('1787850032')` |
-| `ctx.bot(id)` | 取单个 bot 实例（`ctx.bots(id)` 的别名） |
-| `ctx.broadcast()` | 多 bot 广播；必须显式调用，没有默认值 |
-| `ctx.platform()` / `ctx.guild()` / `ctx.private()` | 过滤器：返回只处理命中维度的 ctx，见「过滤器」 |
-| `ctx.llm` | 模型能力：润色、改写、摘要；后期扩到生成图片 / 视频 |
+| `ctx.server` | HTTP 服务，提供 `get`、`post`、`put`、`patch`、`delete`、`head`、`options` 和 `all` 等方法 |
+| `ctx.on()` / `ctx.emit()` | 监听或触发事件；宿主只公开规定的事件，插件也可以定义自己的事件名供其他插件监听 |
+| `ctx.setInterval()` / `ctx.setTimeout()` | 注册到 Cordis 当前插件作用域的定时器，卸载时自动回收 |
+| `ctx.bots` | 可枚举的 Bot 列表，可使用 `ctx.bots[0]`，也可通过 `ctx.bots('<id>')` 按 ID 取实例 |
+| `ctx.bot(id)` | `ctx.bots(id)` 的别名 |
+| `ctx.broadcast()` | 显式向多个 Bot 广播，不是默认发送方式 |
+| `ctx.platform()` / `ctx.guild()` / `ctx.private()` | 创建带派发过滤条件的上下文 |
+| `ctx.llm` | 模型能力，包括润色、改写和摘要；图片、视频生成属于后续扩展 |
 
-**`ctx.send` 不存在。** 发送一律走 bot 或 session，原因见下一节。
+不提供 `ctx.send()`。主动发送必须指定 Bot 或使用当前 Session，避免在多机器人环境中产生歧义。
 
-## session 面
+定时器由 AuraBot 自身的 Cordis 生命周期管理实现，不需要依赖外部扩展回收。插件卸载或禁用时，注册在当前作用域内的定时器会被清理。
+
+## Session 接口
 
 ```ts
-session.bot          // 这条消息从哪个 bot 来
-session.platform     // qq / …
-session.channelId    // 群号；私聊时是对方 id
+session.bot
+session.platform
+session.channelId
 session.userId
 session.selfId
-session.content      // 纯文本视图，由 elements 派生
-session.elements     // 结构化视图
-await session.send(...)     // 发回当前会话
-await session.execute(...)  // 把这句内容当成当前用户新发的一条消息，重新走管线
+session.content
+session.elements
+
+await session.send(content)
+await session.execute(content)
 ```
 
-`session.send()` 可以调用多次，调用几次就发几条——这是插件自己的选择。
-所有发送方法都是异步的，`send` / `sendMessage` / `sendPrivateMessage` / `broadcast` 一律要 `await`。
+`session.content` 是从 `session.elements` 派生的纯文本视图。`session.send()` 向当前会话发送消息，可以调用多次，每次调用发送一次，不受中间件的消费返回值限制。
 
-### 发送面
+### 主动发送
 
 ```ts
-await session.send(h.text('解析好了：'), h.image(url))
+await session.send(h.text('解析完成'), h.image(url))
 
-await session.bot.sendMessage(channelId, content)          // 主动发到某个会话
-await session.bot.sendPrivateMessage(userId, content)      // 私聊
+await session.bot.sendMessage(channelId, content)
+await session.bot.sendPrivateMessage(userId, content)
 
-await ctx.bot('qq-2').sendMessage(channelId, content)      // 指定另一个 bot
-await ctx.broadcast(content)                               // 全 bot 广播（显式）
+await ctx.bot('qq-2').sendMessage(channelId, content)
+await ctx.broadcast(content)
 ```
 
-为什么不用 `ctx.send`：多机器人下它是歧义的。`ctx.send` 只能表示「所有 bot 都发」，
-而「发到哪个会话」必须有归属，所以交给 bot 和 session。
+`sendMessage(channelId, content)` 向指定频道发送，`sendPrivateMessage(userId, content)` 向指定用户发起私聊。它们都是 Bot 的异步方法，不是适配器的业务接口。
+
+所有发送形式都应使用 `await`，包括 `send`、`sendMessage`、`sendPrivateMessage` 和 `broadcast`。
 
 ### `session.execute()`
 
@@ -158,355 +160,367 @@ await ctx.broadcast(content)                               // 全 bot 广播（�
 const result = await session.execute('tell 主人的插件坏了')
 ```
 
-等价于「当前 session 真的收到了这条消息」：完整走一遍指令解析和中间件链。
-如果最终命中 action 或中间件发了消息，**会真的发到平台**——它不是「只跑逻辑不发送」。
+该调用以当前用户和当前 Session 的身份构造一条新的入站消息，重新执行完整消息管线。它可能命中指令，也可能由中间件或模型处理；处理过程中调用的发送方法会实际向平台发消息。
 
-- 前缀由全局配置 `commandPrefixes` 决定，默认 `[null, '/']`（无前缀和 `/` 都认）
-- 递归深度限 1：`execute` 里再 `execute` 直接拒绝
-- 返回值：action 的返回值；被中间件消费时返回 `undefined`
-- 和 `session.send()` 的区别：`execute` 会重新解析（可能触发指令或中间件），`send` 直接原样发出去
-
-## 元素
-
-消息内部统一用元素树表示，宿主注入全局 `h`（和 Koishi 一样，不用 import）。
-
-`h` 本身是函数，默认写法是「类型 + 属性」，`h.text()` 这些只是语法糖：
+例如：
 
 ```ts
-h('text', { content: '你好啊' })          // 等价于 h.text('你好啊')
-h('image', { src: 'https://…/cover.jpg' }) // 等价于 h.image(url)
+await session.execute('echo 你好啊')
 ```
 
-### 自定义类型与适配器能力
+如果已注册的 `echo` 指令会发送参数，平台将收到「你好啊」。`session.execute()` 不是仅在本地执行 action 的快捷函数。
 
-类型不设白名单：`h('my-card', { title: '…' })` 这种自定义块照样能构造、能塞进元素树。
-能不能真的发出去，由**适配器声明支持的消息格式**决定：
+- 指令前缀由全局 `commandPrefixes` 管理，默认允许无前缀和 `/`。
+- 递归深度限制为 1，在 `execute` 产生的管线中再次调用 `execute` 会被拒绝。
+- 指令命中时返回 action 的返回值；中间件消费时返回 `undefined`。
+- 无法匹配指令并不必然抛错，因为消息还可以继续进入中间件或模型阶段。
+
+`session.send()` 与 `session.execute()` 的区别在于，前者直接发送内容，后者重新构造并处理入站消息。
+
+## 消息元素
+
+消息内部使用元素树表示。宿主提供全局 `h`，采用 Satori 元素定义作为基线，不要求插件另行导入。
+
+`h` 是构造函数，类型和属性是通用写法：
 
 ```ts
-await session.send(h('my-card', { title: '正在播放', cover: url }))
+h('text', { content: '你好啊' })
+h('image', { src: 'https://example.com/cover.jpg' })
 ```
 
-| 适配器格式 | 出站处理 |
-| --- | --- |
-| `text` | 只认 `text`；其它类型降级为文本或链接 |
-| `markdown` | 认 `text` + `markdown` |
-| `html` | 认 `text` + `html` |
-| `satori` | 全量，自定义块原样透传 |
-
-`session.bot.supports(type)` 查的就是这张表。插件只负责表达「想发什么」，
-降级由适配器实现，插件不猜平台能力。
+常用类型提供便捷函数：
 
 ```ts
-await session.send(h.text('这个视频好看'), h.image('https://…/cover.jpg'))
+await session.send(h.text('这个视频不错'), h.image(coverUrl))
 await session.send(h.voice(fileUrl))
 await session.send(h.forward([
-  { userId: '10001', userName: '小明', elements: [h('text', { content: '这视频好看' })] },
-  { userId: '10002', userName: '小红', elements: [h.image(pic)] },
+  {
+    userId: '10001',
+    userName: '小明',
+    elements: [h('text', { content: '这个视频不错' })],
+  },
+  {
+    userId: '10002',
+    userName: '小红',
+    elements: [h.image(coverUrl)],
+  },
 ]))
 ```
 
-除了构造函数，还要提供一组处理函数（不只是「消息块」）：
-
-| 方法 | 用途 |
+| 元素 | 用途 |
 | --- | --- |
-| `h.parse(text)` | 字符串 → 元素数组 |
-| `h.select(elements, type)` | 按类型筛选（`h.select(el, 'image')`） |
-| `h.stringify(elements)` | 元素数组 → 纯文本 |
-| `h.normalize(elements)` | 合并相邻文本、去掉空元素 |
-| `h.escape(text)` | 转义成可放进元素树的安全文本 |
-
-| 元素 | 说明 |
-| --- | --- |
-| `h.text` / `h.at` | 文本、@ |
-| `h.image` / `h.voice` / `h.video` / `h.file` | 媒体 |
+| `h.text` / `h.at` | 文本和提及 |
+| `h.image` / `h.voice` / `h.video` / `h.file` | 媒体与文件 |
 | `h.forward` | 合并转发 |
 | `h.quote` | 引用回复 |
 | `h.face` | 表情 |
 
-规则：
+处理函数也是接口的一部分：
 
-1. `session.elements` 是结构化的；`session.content` 由它派生纯文本，正则照旧能用
-2. 能力查询 `session.bot.supports('forward' | 'voice' | 'image')`
-3. 不支持时降级：合并转发 → 多条文本 + 链接；语音 → 附带文件
+| 方法 | 用途 |
+| --- | --- |
+| `h.parse(text)` | 将字符串解析为元素数组 |
+| `h.select(elements, type)` | 按类型筛选元素 |
+| `h.stringify(elements)` | 生成纯文本视图 |
+| `h.normalize(elements)` | 合并相邻文本并移除空元素 |
+| `h.escape(text)` | 转义可放入元素树的文本 |
 
-### 坏 XML 的容错
+### 自定义元素与平台能力
 
-模型不一定听话。装了上下文总结、自动压缩这类插件的用户，经常遇到模型吐出**别的框架的标签**，
-或者标签没闭合：
+元素类型不设固定白名单。插件可以构造自定义元素：
+
+```ts
+await session.send(h('music-card', {
+  title: '正在播放',
+  cover: coverUrl,
+}))
+```
+
+自定义元素是否能够发送由适配器决定。不同平台可以只支持 `text`，也可以支持 `markdown`、`html` 或完整 Satori 元素。
+
+| 适配器能力 | 出站处理 |
+| --- | --- |
+| `text` | 处理文本，其他内容按规则降级为文本或链接 |
+| `markdown` | 处理文本和 Markdown 元素 |
+| `html` | 处理文本和 HTML 元素 |
+| `satori` | 处理完整元素树，自定义元素可以透传 |
+
+`session.bot.supports(type)` 查询当前 Bot 的能力。适配器负责序列化和降级，插件不应自行猜测平台格式。
+
+### 异常标签处理
+
+模型可能输出其他系统的标签或未闭合标签：
 
 ```text
 </ACP>
-你好啊 很高兴第二次遇到你
+你好啊，很高兴第二次遇到你
 ```
 
-不能整条丢掉，也不能原样发出去。解析规则：
+出站解析不能把标签原文直接发给用户，也不能因此丢弃整条消息。处理原则是：
 
-1. 认识的标签正常解析成元素
-2. **不认识的标签连同标签本身丢掉，但保留标签外的文本**
-3. 没闭合的标签当作普通文本，或者按「丢弃标签、保留内容」处理
+1. 已识别的标签解析为相应元素。
+2. 未识别或未闭合的标签不进入出站文本。
+3. 标签之外的正常文本仍然保留。
 
-上例的结果是一条 `<text>你好啊 很高兴第二次遇到你</text>`，而不是把 `</ACP>` 也发出去。
+上述示例发送的文本为「你好啊，很高兴第二次遇到你」，不包含 `</ACP>`。
 
 ## 全局配置
 
-和插件自己的配置分开，挂在宿主自己的 schema 上，面板里单独一页：
+全局配置由主仓库的 Schema 定义，在面板中单独显示，与插件配置分开：
 
 ```ts
 export const globalConfig = Schema.object({
-  contextEcho: Schema.boolean().default(true),        // 出站消息是否回写上下文
-  echoLimitPerSession: Schema.natural().default(20),  // 每会话最多记几条
-  echoMaxChars: Schema.natural().default(500),        // 单条最多记多少字
-  middlewareTimeout: Schema.natural().default(3000),  // 中间件超时
-  commandPrefixes: Schema.array(Schema.string()).default([null, '/']), // 认哪些指令前缀，null = 无前缀
-  middlewareAfterCommand: Schema.boolean().default(false),            // 指令消费后是否仍进中间件（开发中）
+  contextEcho: Schema.boolean().default(true),
+  echoLimitPerSession: Schema.natural().default(20),
+  echoMaxChars: Schema.natural().default(500),
+  middlewareTimeout: Schema.natural().default(3000),
+  commandPrefixes: Schema.array(
+    Schema.union([Schema.string(), Schema.const(null)]),
+  ).default([null, '/']),
+  middlewareAfterCommand: Schema.boolean()
+    .default(false)
+    .experimental(),
 })
 ```
 
-插件里读 `ctx.root.config.contextEcho`。插件自己的 `ctx.config` 不受全局项影响。
+| 配置项 | 含义 |
+| --- | --- |
+| `contextEcho` | 是否将插件和中间件的出站消息写回模型上下文 |
+| `echoLimitPerSession` | 每个会话保留的出站回写条数上限 |
+| `echoMaxChars` | 单条回写内容的字符数上限 |
+| `middlewareTimeout` | 中间件超时时间，单位为毫秒 |
+| `commandPrefixes` | 指令前缀列表，`null` 表示允许无前缀 |
+| `middlewareAfterCommand` | 指令消费后是否继续进入中间件，属于实验性配置 |
+
+插件通过 `ctx.root.config` 读取全局配置，通过 `ctx.config` 读取自身配置。
 
 ## 消息管线
 
 ```text
 入站消息
-  └─ command     先匹配指令，命中就执行 action
-       └─ middleware  指令没消费，才进中间件（默认阶段）
-            └─ llm       AI 消费 → 模型 → ctx.tool → 发送
+ └─ command      匹配并执行指令
+     └─ middleware  指令未消费时进入中间件
+         └─ llm       模型处理、调用工具并发送
 ```
 
-只允许三个阶段：`command` / `middleware` / `llm`，默认是 `middleware`。
-顺序是固定的——**先指令，后中间件**，因为消息刚进来时应该优先匹配用户显式写的指令；
-没人消费才轮到中间件，最后才是 AI。
-
-中间件用名字定位，不用数字：
+阶段固定为 `command`、`middleware` 和 `llm`。中间件默认位于 `middleware` 阶段，通过阶段名定位，不使用数字优先级：
 
 ```ts
-ctx.middleware(fn, { before: 'llm', timeout: 3000, onError: 'skip' })
+ctx.middleware(async (session, next) => {
+  if (!session.content) return next()
+  await session.send('已处理')
+}, { before: 'llm', timeout: 3000, onError: 'skip' })
 ```
 
-`onError: 'skip'`：这个中间件出错当没过（记日志、继续下一个），一个坏插件不能把整条管线打死。
+`onError: 'skip'` 表示记录错误后继续后续处理，避免单个插件异常中断整条管线。
 
-### 指令消费后要不要继续走中间件
+### 指令消费后的处理
 
-默认**不继续**（和 Koishi 一致）。代价是有个真实的坑：用户发 `@机器人 BV123456`，
-恰好有个指令就叫 `BV123456`，指令消费掉消息，负责解析 BV 号的中间件就永远等不到。
+默认情况下，指令消费消息后不再进入中间件，与 Koishi 的处理顺序一致。这样可能产生冲突：消息同时匹配某个指令和 BV 号解析中间件时，指令会先消费消息。
 
-所以留一个全局配置 `middlewareAfterCommand`（默认 `false`，标注「开发中」），
-需要「指令和中间件都要跑」的场景自己打开。默认值先保持不跑，避免一个消息被多个消费者重复处理。
+`middlewareAfterCommand` 用于控制指令消费后是否继续进入中间件，默认值为 `false`。该配置标记为实验性，默认值和具体适用场景仍需通过实现与测试确认。
 
-### 消费语义
+### 消费与发送
 
 | 写法 | 含义 |
 | --- | --- |
-| `await session.send(...)` | 发一条消息；可调用多次 |
-| `return` | 本条已处理完，不再往下传；**不会**自动再发一条 |
-| `return next()` | 交给下一个中间件，最终可能落到 AI |
-| `await session.execute(...)` | 当成新消息重新走管线，会真的发出去 |
+| `await session.send(...)` | 发送一条消息；在同一处理器中可以调用多次 |
+| `return` | 消费当前消息，不再向下传递；框架不会因此自动发送回复 |
+| `return next()` | 交给后续处理器，最终可能进入模型阶段 |
+| `await session.execute(...)` | 构造新的入站消息并重新执行完整管线 |
 
-`return` 不带值当「消费」，是为了避免「框架发一次 + 插件再发一次」。
-返回字符串不自动当回复——要说话就 `session.send`。
+消费消息和发送消息是两个独立行为。`return` 只控制传递，不限制此前或此后可以调用多少次 `session.send()`。返回字符串不自动作为回复，发送必须显式调用发送接口。
 
-### 过滤器
-
-按维度过滤保留 Koishi 那套写法，插件不用自己写 `if (session.platform !== 'qq') return next()`：
+### 派发过滤器
 
 ```ts
-ctx.platform('qq').middleware(async (session, next) => { … })
+ctx.platform('qq').middleware(async (session, next) => {
+  return next()
+})
+
 ctx.platform('qq', 'discord').command('ping')
 ctx.guild('123456').on('message', handler)
 ctx.private().on('message', handler)
 ```
 
-维度先支持 `platform` / `selfId` / `guild` / `channel` / `private`。
-过滤器只影响派发——不命中维度的消息不会进这个 ctx 的监听器，但 ctx 本身的生命周期不变。
+第一阶段支持 `platform`、`selfId`、`guild`、`channel` 和 `private` 维度。过滤器只影响消息派发，不改变插件实例的生命周期。多个过滤器叠加时的组合规则仍待确认。
 
-### 出站回写上下文
+### 出站消息回写
 
-插件或中间件发出的消息，默认写回当前会话的上下文，标记为 `assistant / self-sent`。
-否则用户下一句「谢谢」，AI 不知道自己刚发过链接，会再贴一遍。
+插件或中间件发送的消息默认写回当前会话的模型上下文，标记为 `assistant / self-sent`。这样模型可以知道自己已经发送过哪些内容。
 
-回写受全局配置控制（`contextEcho` / `echoLimitPerSession` / `echoMaxChars`），
-单条消息可以 `{ echo: false }` 关掉。
+回写数量和内容长度由全局配置限制。单次发送可以使用 `{ echo: false }` 禁止回写。
 
-## 平台层：Satori 是基线
+## Satori 与适配器
 
-元素树直接采用 Satori 的元素定义（`<message><text/><img src/></message>` 那一套）。
-好处是接新平台时只做序列化，不做语义翻译。
+元素树采用 Satori 的元素定义。平台接入时，适配器负责平台消息与元素树之间的转换，业务插件不直接处理平台专有消息段。
 
-适配器三条路：
+| 接入方案 | 特点 | 结论 |
+| --- | --- | --- |
+| 直接导入 Koishi 平台适配器 | 需要同时运行 Koishi 应用和两套调度 | 不采用 |
+| 实现 Satori Client，对接 Satori Server | 可以复用现有协议服务 | 中期方案 |
+| 移植 `@satorijs/adapter-onebot` | 适用于已有 OneBot 接入 | 当前平台方案 |
 
-| 方案 | 复用度 | 代价 | 结论 |
-| --- | --- | --- | --- |
-| 直接 import `@koishijs/plugin-adapter-*` | 高 | 要跑一个 Koishi App，两套调度 | 不做 |
-| **宿主实现 Satori client，对接 satori server** | 平台全覆盖 | 一个 WebSocket + 协议编解码 | 中期方案 |
-| 移植 `@satorijs/adapter-onebot` | 单平台 | 几百行 | 已有 OneBot，够用 |
+纯逻辑 Koishi 插件可以评估通过模块别名提供有限兼容；依赖 `ctx.database`、`ctx.console` 等服务的插件不在兼容目标内。
 
-Koishi 插件同理：只有纯逻辑（`ctx.command` / `ctx.middleware` / `ctx.http`）的可以用包名别名（module alias）shim，
-依赖 `ctx.database`、`ctx.console` 的不做兼容。
+### 适配器插件
 
-### 适配器也是一种插件
-
-官方不可能覆盖所有平台，社区一定会有人想自己写。所以适配器不应该是宿主里的特例，
-而是一类**特殊插件**：自己注册 bot，拿到机器人的完整生命周期——上线、下线、收到消息、下发消息。
+适配器是一类特殊插件，可以向宿主注册 Bot，并处理连接、断开、入站解码和出站投递。社区可以在独立仓库维护适配器，不必向主仓库提交平台实现。
 
 ```ts
 import { Schema } from '@aurabot/plugin-api'
 
-export const name = 'My Platform 适配器'
-export const reusable = true            // 允许同一个插件开多份配置（多账号）
+export const name = '示例平台适配器'
+export const reusable = true
 
 export const config = Schema.object({
   selfId: Schema.string().required(),
   token: Schema.string().role('secret'),
 })
 
-// 声明式：宿主读到这个导出，按它建 bot、管连接；插件不持有连接句柄
 export function adapter(config) {
   return {
-    platform: 'my-platform',
-    async connect() { /* 建立连接 */ },
-    async disconnect() { /* 下线清理 */ },
-    decode(raw) { /* 入站：平台消息 → 元素树 */ },
-    async deliver(target, elements) { /* 真正的投递动作 */ },
+    platform: 'example',
+    async connect() {},
+    async disconnect() {},
+    decode(raw) {},
+    async deliver(target, elements) {},
   }
 }
 ```
 
-- **不挂 `ctx.adapter`。** 适配器不是 ctx 上的方法，不改写上下文。它跟普通插件一样加载，
-  只是多导出一个 `adapter()` 契约
-- **默认允许多开。** 同一平台接多个账号是常态，多个实例共用同一套后端逻辑。
-  普通插件默认只能开一份，作者显式 `export const reusable = true` 才允许多份配置
-- **不通过 ctx 开关。** 启停、重连在面板与宿主侧完成，插件里没有 `ctx.adapter.connect()` 这类入口
-- **`sendMessage` / `sendPrivateMessage` 不是适配器的 API。** 它们是 `Bot` 的方法；
-  适配器只负责把 Bot 接上平台（内部叫 `deliver`），业务侧永远只跟 Bot / session 打交道
+适配器遵循以下约定：
 
-- 好处：官方仓库不用背所有平台；社区仓库（`aurabot-adapters` 之类）可以单独维护，作者参考成本低
-- 代价：兼容面从「简单交互插件」扩大到「生命周期插件」。宿主必须先把 adapter 契约、bot 注册表、
-  重连与去重定死，否则社区适配器一多就会互相踩
-- 结论：方向认可，但不和前六个阶段混在一起做，单独排到 S8，先定契约再放开
+- 不通过 `ctx.adapter()` 注册。适配器通过独立的 `adapter()` 导出提供声明式契约。
+- 适配器默认允许多实例，同一平台可以接入多个账号，共用一套处理逻辑。
+- 普通插件默认单实例，只有导出 `reusable = true` 才允许多份配置。
+- 连接、断开和重连由面板与宿主管理，不通过 Context 操作适配器开关。
+- `sendMessage()` 和 `sendPrivateMessage()` 是 Bot 方法，不是适配器契约；适配器只实现底层 `deliver()`。
+- 入站消息由 `decode()` 转换为元素树后进入消息管线，适配器不处理业务逻辑。
 
-## 宿主改造清单
+适配器插件化扩大了宿主需要兼容的生命周期范围。Bot 注册表、重连、去重和适配器能力边界必须在开放社区适配器前明确。
 
-按依赖顺序排。每阶段都能独立发版，前三个阶段对作者零破坏。
+## 实施顺序
 
-### S0 地基：Bot 与 Session
+每个阶段都应有独立验收。设计中的阶段编号用于表达依赖，不表示当前完成度。
 
-- [ ] `Bot`：`id` / `platform` / `selfId` / `sendMessage` / `sendPrivateMessage` / `supports`
-- [ ] 现有 `api.send(chatId, ...)` 内部改走 `bot.sendMessage`，外部行为不变
-- [ ] `Session`：一条入站消息构造一个，群 / 私聊 / 指令 / 定时任务都走同一个工厂
-- [ ] 发送目标统一 `{ platform, botId, type: 'group' | 'private', id }`
+### S0：Bot 与 Session
 
-**验收**：同一段业务逻辑，从群消息、私聊、定时任务三种来源进来都能跑。
+- [ ] 实现 `Bot` 的 `id`、`platform`、`selfId`、`sendMessage`、`sendPrivateMessage` 和 `supports`。
+- [ ] 现有 `api.send()` 内部迁移到 Bot，外部行为保持不变。
+- [ ] 统一群聊、私聊、指令和定时任务的 Session 构造。
+- [ ] 发送目标统一包含平台、Bot、会话类型和 ID。
 
-### S1 = P0：ctx 别名（零破坏）
+验收：同一业务逻辑可以处理群消息、私聊和定时任务。
 
-- [ ] 支持 `export function apply(ctx, config)`
-- [ ] `ctx` 上挂 v1 的全部方法（`on` / `tool` / `route` / `use` / `dataDir` …）
-- [ ] `setup(api)` 适配器：`api` 就是 `ctx` 的别名，老插件零改动
-- [ ] 加载时按入口形态判断，日志里注明 v1 / v2
+### S1：Context 兼容层
 
-**验收**：现有 80 多个插件不改一行，照常加载运行。
+- [ ] 支持 `export function apply(ctx, config)`。
+- [ ] 将 V1 的 `on`、`tool`、`server`、`use` 和 `dataDir` 等能力映射到 Context。
+- [ ] 使用 Context 适配 V1 的 `setup(api)`。
+- [ ] 在日志中标明加载的是 V1 还是 V2 接口。
 
-### S2 = P1：Schema 配置
+验收：现有 V1 模块无需修改即可继续加载。
 
-- [ ] 引入 `Schema`（`boolean` / `string` / `number` / `natural` / `union` / `object` / `array` / `default` / `description`）
-- [ ] 元信息：`disabled` / `hidden` / `deprecated` / `experimental` / `role('secret')` / `required`
-- [ ] 老 `settings` 数组自动转换，面板渲染一致
-- [ ] `app.config` 全局配置页
-- [ ] 校验失败在面板里就地提示，不要静默回落默认值
-- [ ] `panel.js` 改为可选的前端入口（产物 `dist/index.js`），普通插件不再需要它
+### S2：Schema 配置
 
-**验收**：一个只有 schema、没有 `panel.js` 的插件，所有配置项都能在面板里改，`experimental` 项带标记。
+- [ ] 引入字段类型、默认值和描述。
+- [ ] 实现 `disabled`、`hidden`、`deprecated`、`experimental`、`role('secret')` 和 `required`。
+- [ ] 将 V1 的 `settings` 自动转换为 Schema。
+- [ ] 提供全局配置页。
+- [ ] 校验失败时在面板显示错误，不静默使用默认值。
+- [ ] 将自定义面板改为可选的 `dist/index.js` 前端入口。
 
-### S3 = P2：生命周期
+验收：没有自定义面板的插件也能完成全部普通配置，实验性字段有明确标记。
 
-- [ ] `ctx.setInterval` / `ctx.setTimeout` / `ctx.on` / `ctx.effect`
-- [ ] 卸载 / 禁用时自动 dispose；`ctx.on('dispose')`
-- [ ] `scripts/check.mjs` 静态检测裸 `setInterval` / `process.on`，给警告
+### S3：生命周期
 
-**验收**：面板里禁用插件后，定时器与监听器不再触发。
+- [ ] 实现 `ctx.setInterval()`、`ctx.setTimeout()`、`ctx.on()` 和 `ctx.effect()`。
+- [ ] 禁用或卸载时自动释放资源。
+- [ ] 静态检查未纳入生命周期的 `setInterval` 和 `process.on`。
 
-### S4：元素模型
+验收：插件禁用后，相关定时器和监听器不再触发。
 
-- [ ] 注入全局 `h`：`text` / `at` / `image` / `voice` / `video` / `file` / `forward` / `quote` / `face`
-- [ ] `h` 是函数：`h('text', { content })`；同时提供 `h.parse` / `h.select` / `h.stringify` / `h.normalize`
-- [ ] 自定义类型不设白名单：`h('任意类型', props)` 可构造，能否出站由适配器能力表决定
-- [ ] 坏标签容错：不认识的 XML 标签丢弃、标签外的文本保留
-- [ ] `session.elements` 结构化，`session.content` 派生
-- [ ] 入站 OneBot 消息段 → 元素树；出站反序列化 + 降级
-- [ ] `bot.supports()` 能力表：`text` / `markdown` / `html` / `satori` / `forward` / `voice` / `image`
+### S4：消息元素
 
-**验收**：`h.forward` 在 QQ 出合并转发，在不支持的平台降级为多条文本。
+- [ ] 提供全局 `h` 和常用元素。
+- [ ] 实现 `h.parse()`、`h.select()`、`h.stringify()` 和 `h.normalize()` 等处理函数。
+- [ ] 支持自定义元素和适配器能力表。
+- [ ] 实现异常标签容错。
+- [ ] 建立 `session.elements` 与 `session.content` 的派生关系。
+- [ ] 完成 OneBot 消息段与元素树的双向转换和降级。
 
-### S5：管线与中间件
+验收：支持合并转发的平台可以发送 `h.forward`，不支持的平台按适配器规则降级。
 
-- [ ] 阶段 `command → middleware → llm`，`before` / `after` 按名字定位，默认 `middleware`
-- [ ] 全局配置 `commandPrefixes`（默认 `[null, '/']`）与 `middlewareAfterCommand`（默认 `false`）
-- [ ] 过滤器 `ctx.platform()` / `ctx.guild()` / `ctx.private()`，只影响派发
-- [ ] 消费语义：`return` / `return next()` / 多次 `session.send`
-- [ ] `{ timeout, onError: 'skip' }`
-- [ ] 出站回写上下文 + 全局配置
-- [ ] `session.execute()` 走完整管线（含递归保护）
+### S5：消息管线
 
-**验收**：B 站解析中间件回链接后，AI 不再重复回复，且知道「自己发过」。
+- [ ] 实现 `command → middleware → llm` 和按名称定位。
+- [ ] 实现指令前缀与实验性的 `middlewareAfterCommand`。
+- [ ] 实现平台、频道和私聊过滤器。
+- [ ] 区分消费、继续传递和多次发送。
+- [ ] 实现超时与错误隔离。
+- [ ] 实现出站回写及其上限。
+- [ ] 实现走完整管线且具有递归保护的 `session.execute()`。
 
-### S6 = P3：契约正式化
+验收：中间件发送解析结果后，模型不会重复处理已消费消息，并能读取已发送内容。
 
-- [ ] `package.json.aurabot.api = 2`，v1 长期保留
-- [ ] 类型包 `@aurabot/plugin-api`（只发类型，不强制 npm 发布）
-- [ ] 模板仓库与 `MODULE_SPEC.md` 同步更新
-- [ ] 市场上标注 v1 / v2
+### S6：接口正式化
 
-**验收**：模板仓库新建的插件默认就是 v2 写法，`npm run check` 通过。
+- [ ] 使用 `package.json.aurabot.api = 2`，保留 V1 兼容。
+- [ ] 提供 `@aurabot/plugin-api` 类型包；该包承载插件接口类型，尚未发布前模板需要明确替代方案。
+- [ ] 同步模板仓库和模块规范。
+- [ ] 在市场标明接口版本。
 
-### S7：平台层
+验收：模板创建的 V2 插件通过类型检查和构建。
 
-- [ ] 宿主实现 Satori client（连接、鉴权、重连）
-- [ ] 元素树 ↔ Satori 消息序列化
-- [ ] 用 satori server 接一个非 QQ 平台做验证
+### S7：Satori 平台层
 
-**验收**：接一个新平台，插件代码零改动。
+- [ ] 实现 Satori Client 的连接、鉴权和重连。
+- [ ] 实现元素树与 Satori 消息的序列化。
+- [ ] 使用一个非 QQ 平台验证业务插件复用。
+
+验收：新增平台时，业务插件无需修改。
 
 ### S8：适配器插件化
 
-- [ ] 定声明式契约（不走 ctx）：`adapter()` 返回 `platform` / `connect` / `disconnect` / `decode` / `deliver` / 能力声明
-- [ ] `export const reusable = true` 支持多实例；普通插件默认单实例
-- [ ] bot 注册表支持动态增删（上线、下线、重连），由宿主管理，插件不持连接句柄
-- [ ] 入站消息由适配器 `decode` 成元素树后交给管线，适配器不碰业务逻辑
-- [ ] `Bot.sendMessage` / `sendPrivateMessage` 由宿主统一包装，不暴露成适配器方法
-- [ ] 市场与面板区分「普通插件」和「适配器插件」，标注 platform
-- [ ] 出一个官方适配器仓库做参考实现
+- [ ] 确定 `adapter()` 的连接、断开、解码、投递和能力声明。
+- [ ] 实现普通插件的 `reusable` 和适配器默认多实例。
+- [ ] 支持 Bot 动态上线、下线和重连。
+- [ ] 由宿主统一包装 Bot 的发送方法。
+- [ ] 在市场和面板中区分普通插件与适配器插件。
+- [ ] 提供独立的官方适配器参考仓库。
 
-**验收**：一个仓库外的适配器插件装上就能让新平台上线收发消息，插件代码零改动；同平台可以开两个账号实例。
+验收：安装外部适配器后可以接入新平台，同一平台可以运行两个账号实例，业务插件无需修改。
 
-## 依赖与顺序
+## 依赖关系
 
-| 阶段 | 依赖 | 可并行 |
+| 阶段 | 前置依赖 | 可并行工作 |
 | --- | --- | --- |
-| S0 Bot / Session | 无 | — |
-| S1 ctx 别名 | S0 | 与 S2 并行 |
-| S2 Schema | 无 | 与 S1 并行 |
-| S3 生命周期 | S1 | 与 S4、S5 并行 |
-| S4 元素 | S0 | 与 S3、S5 并行 |
-| S5 管线 | S1、S4（富媒体）、S2（全局配置） | — |
-| S6 正式化 | S1–S5 全部 | — |
-| S7 平台层 | S4（元素树） | 可与 S5 并行 |
-| S8 适配器插件化 | S0（Bot）、S7（协议） | — |
+| S0 | 无 | — |
+| S1 | S0 | 与 S2 并行 |
+| S2 | 无 | 与 S1 并行 |
+| S3 | S1 | 与 S4 并行 |
+| S4 | S0 | 与 S3 并行 |
+| S5 | S1、S2、S4 | — |
+| S6 | S1 至 S5 | — |
+| S7 | S4 | 可与 S5 并行 |
+| S8 | S0、S7 | — |
 
-一句话顺序：**S0 →（S1 ∥ S2）→（S3 ∥ S4）→ S5 → S6，S7 单独立项，S8 在 S7 之后。**
+主顺序为 S0，随后并行 S1 与 S2，再并行 S3 与 S4，之后完成 S5 和 S6。S7 是独立的平台工作，S8 在 Bot 与 Satori 基础完成后实施。
 
-## 明确不做
+## 不采用的设计
 
-- 不把 Koishi 运行时装进宿主进程
-- 不为任意 Koishi 插件做二进制兼容
-- 不做 `ctx.send` 这种无归属的发送入口
-- 不用数字优先级排中间件
+- 不在宿主中运行完整的 Koishi 应用。
+- 不为所有 Koishi 插件提供二进制兼容。
+- 不提供无法确定目标 Bot 的 `ctx.send()`。
+- 不使用数字作为中间件阶段优先级。
+- 不使用 `ctx.adapter()` 管理适配器。
 
-## 待定
+## 待确认事项
 
-- [ ] ctx 用 cordis 还是自研容器（只影响宿主实现，不影响作者写法）
-- [ ] 元素 schema 是否带版本号（`h.v2.forward`）
-- [ ] 全局配置是全局唯一，还是允许每 bot 覆盖
-- [ ] `contextEcho` 默认开会不会让长会话上下文膨胀过快，需要实测
-- [ ] `middlewareAfterCommand` 在什么场景下默认打开才合理（先标「开发中」）
-- [ ] 适配器插件化的兼容边界：允许它用多少宿主内部能力
-- [ ] 多重过滤器叠加（`ctx.platform('qq').guild('…')`）是交集还是替换
+- [ ] 全局配置是否允许按 Bot 覆盖。
+- [ ] 元素定义是否需要独立的版本标识。
+- [ ] 出站回写的默认上限是否适合长会话。
+- [ ] `middlewareAfterCommand` 的默认行为和兼容策略。
+- [ ] 适配器插件可以访问哪些宿主能力。
+- [ ] 多个过滤器叠加时采用交集还是替换语义。

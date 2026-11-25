@@ -1,34 +1,26 @@
-# 接入平台
+# 平台连接
 
-平台不是写死在框架里的，一个平台就是一个**适配器插件**：它负责登录、上下线、把平台消息
-归一化成统一的消息对象，再把你发出去的东西还原成平台认识的样子。
+适配器负责平台登录、连接维护、消息转换和实际投递。框架处理统一后的消息对象，因此业务插件不需要分别实现各平台的消息格式。
 
-因为它是插件，所以：**同一个平台可以开多份**（挂多个账号），而处理逻辑仍然是同一套。
+## 支持状态
 
-## 支持情况
-
-| 平台 | 状态 | 怎么接 |
+| 平台 | 状态 | 连接方式 |
 | --- | --- | --- |
-| QQ | 已支持 | OneBot v11 网关（SnowLuma / NapCat / LLOneBot / Lagrange），见[接入 QQ](/guide/platforms/qq) |
+| QQ | 已支持 | OneBot v11，见[接入 QQ](/guide/platforms/qq) |
 | QQ 官方 | 规划中 | QQ 开放平台 |
 | Telegram | 规划中 | Bot API |
 | Discord | 规划中 | Bot API |
 
-没有现成适配器也能自己写：适配器只是插件的一种，注册的能力不同而已，写法见[插件接口 v2](/reference/plugin-api)。
+适配器可以作为独立插件开发。同一适配器配置多个实例时，可以管理多个机器人账号，业务处理仍由同一套插件完成。
 
-## 多个账号怎么发消息
+## 指定发送对象
 
-消息发出去时要指明从哪个机器人发，不能笼统地「发到平台」：
+主动发送消息时，需要明确机器人实例和接收对象：
 
 ```ts
-// 主动发到某个群 / 频道
 await session.sendMessage(channelId, content)
-
-// 主动私聊某个人
 await session.sendPrivateMessage(userId, content)
-
-// 手上只有机器人 id 时，先取实例
 await ctx.bots(robotId).sendMessage(channelId, content)
 ```
 
-`ctx.bots` 是列表，也可以按 id 取具体那一只——接了两个 QQ 号时，这是唯一不会发错的办法。
+`ctx.bots` 可枚举机器人实例，也可按 ID 取得指定实例。发送接口均为异步操作。

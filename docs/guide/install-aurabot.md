@@ -1,17 +1,11 @@
 # 安装 AuraBot
 
-确保你已经能在 DSH 里正常对话，再来装这个插件——模型没通的话，装完也只会看到报错。
+安装前确认 DSH 已能新建会话并正常调用模型。
 
-::: warning 本页待修改
-安装方式还没定稿：我们准备把 AuraBot 发布到 npm，通过 DSH 自带的插件市场安装，
-不再手动敲 `dsh plugin add`。所以这一节先留空，等发布形态定下来再补。
+::: warning 安装方式待更新
+V2 计划通过 npm 和 DSH 插件市场分发。安装命令和首次启动流程尚未定稿，因此本页暂不提供可能过时的步骤。
 
-在那之前，装法以[主框架仓库](https://github.com/aureth-labs/dsh-aurabot-qq)的 README 为准。
+当前可用版本的安装方法见[框架仓库](https://github.com/aureth-labs/dsh-aurabot-qq)。
 :::
 
-## 装好之后
-
-左侧栏会多出一个 `Aurabot` 入口，点进去是设置向导：先确认机器人账号，再选平台，
-最后是试运行。走完向导才算接上。
-
-后面两步分别见[接入平台](/guide/platforms/)和[认识面板](/guide/configure)。
+安装完成后，DSH 的 Web UI 中会出现 AuraBot 入口。首次配置包括机器人账号、平台连接和发送权限，随后再按[平台连接](/guide/platforms/)完成接入。

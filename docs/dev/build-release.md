@@ -1,71 +1,52 @@
 # 构建与发布
 
-结论：**产物由 CI 构建，作者只推源码。** 本地只跑 `check` 和 `build` 验证，
-真正发布走 Actions，客户端拿到的是 zip。
+发布包应由 CI 从源码构建。仓库保存源码、清单和构建脚本，Release 保存供用户下载的 zip。
 
-## 本地两个命令
+## 本地检查
+
+以项目实际脚本为准。npm 模板通常使用：
 
 ```bash
-npm run check     # tsc --noEmit，纯类型检查
-npm run build     # src/ → lib/，client/ → dist/
+npm run check
+npm run build
 ```
 
-`build.mjs` 做四件事：
+构建过程负责：
 
-1. 删掉旧的 `lib/`、`dist/`
-2. 用 `tsconfig.json` 编译 `src/` → `lib/`
-3. 如果有 `client/panel.ts`，用 `tsconfig.client.json` 编译 `client/` → `dist/`
-4. 把 `dist/panel.js` 里的 `export default function` 换成 `return function`
+1. 清理旧的 `lib/` 和 `dist/`。
+2. 将 `src/` 编译到 `lib/`。
+3. 将存在的 `client/` 编译到 `dist/`。
+4. 转换面板产物格式并生成市场需要的清单。
 
-第 4 步不能省：面板是宿主用 `new Function(body)` 跑的，它要的是**函数体**，不是模块。
-
-## 发版流程
+## CI 发版
 
 ```text
-改代码 + 升 version
-   └─ push 到 main
-        └─ Actions：npm ci → check → build → 打 zip → 发 Release
-             └─ 回写 package.json.aurabot.artifact{url,sha256,size}
-                  └─ bot commit（带 [skip ci]）
-                       └─ 市场下次构建拉到新 artifact
+修改源码并更新 version
+  └─ 推送默认分支
+       └─ CI 检查、构建并打包
+            └─ 发布 Release
+                 └─ 回写 artifact 的 URL、sha256 和 size
 ```
 
-几个要点：
+发布脚本按目录检查版本变化。未升版本的插件不应重复发布。
 
-- **谁升版本谁发版**：脚本按目录比 `version`，没变就跳过
-- **zip 里只有产物**：`lib/`、`dist/`、`package.json`、`README`、`LICENSE`，不带 `node_modules`
-- **sha256 必须回写**：客户端下载后校验，对不上直接拒绝
-- **回写提交带 `[skip ci]`**：避免自己触发自己
+zip 只包含运行所需产物、清单、README 和许可证，不包含 `node_modules`。客户端依据 `sha256` 和大小校验下载结果。
 
-模板仓库的 `.github/workflows/release.yml` 和 `scripts/release.mjs` 就是这套实现，
-照抄改改就能用。
+## 市场索引
 
-## 市场怎么收录
+市场读取收录清单中的 `package.json`，校验字段和发布产物，然后生成 `market.json`。单个条目失败时应写入报告，不影响其他条目。
 
-在市场仓库的 `registry.jsonl` 里加一行，指向你仓库里那个 `package.json`：
+## 版本管理
 
-```text
-https://github.com/<owner>/<repo>/blob/main/modules/playmusic/package.json
-```
+- 更新：修改源码并提升 `version`。
+- 撤回：删除对应 Release，并按市场流程更新索引。
+- 改名：视为新标识，需要检查配置和数据迁移。
 
-市场构建时：
+## 不要提交的内容
 
-1. 把链接换成 `?raw=1` 拉取原始内容（**你的链接保持 `blob` 原样就行**）
-2. 按 schema 校验，不通过就跳过并写进 `report.md`
-3. 用仓库 owner 拼 id：`owner/name`；重名自动加 `-2`
-4. 合成 `market.json`，发到 `market` 分支
-
-## 版本与撤回
-
-- 更新：升 `version`，重跑发版
-- 撤回某版本：自己删 Release、改版本号。市场每次全量重建，下一次构建就看不到了
-- 改名：等于发布了一个新插件，旧的会从索引里消失
-
-## 不要做的事
-
-| 别做 | 原因 |
+| 内容 | 原因 |
 | --- | --- |
-| 提交 `lib/`、`dist/` | 产物由 CI 生成，提交了会和源码对不上 |
-| 在 zip 里带 `node_modules` | 体积爆炸，而且平台差异会导致加载失败 |
-| 手动改 `artifact.sha256` | 客户端会校验失败，等于发了个坏包 |
-| 用 CJS 写入口 | 只支持 ESM，`"type": "module"` 是硬要求 |
+| `lib/`、`dist/` | 应由 CI 生成 |
+| `node_modules/` | 体积大且可能包含平台相关文件 |
+| 手工修改的校验值 | 容易导致下载校验失败 |
+| CommonJS 入口 | 当前新格式只接受 ESM |

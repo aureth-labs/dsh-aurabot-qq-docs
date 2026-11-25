@@ -1,130 +1,179 @@
-# 如何开发我们的框架
+# 框架开发环境
 
-这页解决三件事：**本机怎么起一套能改代码的环境**、**DSH 下 TypeScript 插件的正确写法**、
-**改完怎么让它立刻生效**。主框架 TypeScript 化的迁移顺序也放在最后。
+本文面向 AuraBot 主仓库开发者，说明本机环境、DSH 插件加载方式、热重载和 TypeScript 迁移。社区插件的目录结构与发布流程见[插件开发](/dev/why-typescript)。
 
-下面的路径和版本都是本机实测结果，换机器时按自己的安装位置替换。
+文中路径来自一套 Windows 开发环境。实际开发时应替换为自己的安装目录，不要照抄用户名和盘符。
 
-## 本机现状
+## 本机环境
 
-| 东西 | 位置 / 版本 |
+| 项目 | 路径或版本 |
 | --- | --- |
-| DSH CLI 安装目录 | `D:\software_apps\DeepSeekharness\dsh`（入口 `dsh.cmd`） |
-| DSH 版本 | `0.2.2-rc.5` |
-| Node | `v24.8.0` |
-| `$DSH_HOME` | `C:\Users\shangxue\.dsh` |
-| WebUI profile | `C:\Users\shangxue\.dsh\profiles\web` |
-| profile 清单 | `profiles/web/package.json`（`dsh.profile.bundles`） |
-| 用户 patch 层 | `profiles/web/cordis.patch.yml` |
+| DSH CLI | `D:\software_apps\DeepSeekharness\dsh\dsh.cmd` |
+| DSH | `0.2.2-rc.5` |
+| Node.js | `v24.8.0` |
+| DSH 数据目录 | `C:\Users\shangxue\.dsh` |
+| Web UI 配置档案 | `C:\Users\shangxue\.dsh\profiles\web` |
+| 配置档案补丁 | `C:\Users\shangxue\.dsh\profiles\web\cordis.patch.yml` |
 | 启动日志 | `C:\Users\shangxue\.dsh\logs\startup-*.log` |
-| 主框架仓库 | `D:\QQbots\project\github\aurabot\plugins\dsh-aurabot-qq-v2` |
+| AuraBot 主仓库 | `D:\QQbots\project\github\aurabot\plugins\dsh-aurabot-qq-v2` |
 | 社区插件仓库 | `D:\QQbots\project\github\aurabot\plugins\dsh-aurabot-qq-mods` |
-| 已安装的社区插件 | `C:\Users\shangxue\.dsh\plugins-data\aurabot\modules\<id>\` |
+| 已安装的社区插件 | `C:\Users\shangxue\.dsh\plugins-data\aurabot\modules\<id>` |
 
-社区插件目录可以用环境变量 `AURABOT_DATA_DIR` 改到别处；没设时就是上表最后一行。
+设置 `AURABOT_DATA_DIR` 可以更改 AuraBot 的数据目录。未设置时使用上表中的 `plugins-data` 路径。
 
-## 谁加载谁
+## 启动与检查
 
-```text
-dsh CLI
- └─ profile（profiles/web）
-     ├─ bundles：@deepseek-ai/dsh-base → @deepseek-ai/dsh-web-app
-     ├─ profiles/web/cordis.patch.yml        你的覆盖层
-     └─ --patch <file>                        启动时再叠一层（可重复）
-         └─ 插件行：id + name + config
-             └─ AuraBot 宿主（src/host.js）
-                 └─ plugins-data/aurabot/modules/<id>/index.mjs
-                     └─ lib/index.js               编译产物
-```
-
-配置按层叠，**后面的层按行覆盖前面的层**，而且 patch 会替换整行 `config`，不是逐键合并。
-顺序是：
-
-1. `dsh.profile.bundles` 里各个组合包的 patch，按列表顺序
-2. profile 自己的 `cordis.patch.yml`
-3. `$DSH_HOME/cordis.patch.yml`（本机全局，当前不存在）
-4. 每个 `--patch <path>`，按命令行顺序
-
-先看叠完长什么样，不用启动：
-
-```powershell
-cd D:\software_apps\DeepSeekharness\dsh
-.\dsh.cmd --profile web --dump-config
-```
-
-## 起本地工作区
-
-### 日常启动
+启动 Web UI：
 
 ```powershell
 cd D:\software_apps\DeepSeekharness\dsh
 .\dsh.cmd web
 ```
 
-端口被占（日志里 `EADDRINUSE: 127.0.0.1:8787`）就换一个：
+端口被占用时，改用其他端口。以下示例使用日志中出现过冲突的 `8787`，实际端口以启动输出为准：
 
 ```powershell
 .\dsh.cmd web --port 8788 --no-open
 ```
 
-### 把本地源码挂进 profile
+加载顺序如下：
 
-改 DSH 插件时不要反复打包安装，写一个 overlay 直接指源码绝对路径：
+```text
+DSH CLI
+ └─ 配置档案
+     ├─ package.json 中的 dsh.profile.bundles
+     ├─ profiles/<profile>/cordis.patch.yml
+     ├─ 启动参数 --patch <file>
+     └─ AuraBot
+         └─ plugins-data/aurabot/modules/<id>/index.mjs
+             └─ lib/index.js
+```
+
+配置按以下顺序叠加：
+
+1. `dsh.profile.bundles` 中各组合包附带的补丁。
+2. 当前配置档案的 `cordis.patch.yml`。
+3. DSH 数据目录下的全局 `cordis.patch.yml`。
+4. 启动命令中的各个 `--patch` 文件。
+
+同一插件出现多次时，后面的配置按 `id` 覆盖前面的整项 `config`，不是逐字段合并。启动前可以检查叠加结果：
+
+```powershell
+.\dsh.cmd --profile web --dump-config
+```
+
+## 加载主仓库源码
+
+开发主仓库时，不必在每次修改后重新打包安装。新建一个补丁文件，将 AuraBot 入口指向本地源码：
 
 ```yaml
-# dev.patch.yml
 - insert:
     - id: aurabot-dev
       name: 'D:/QQbots/project/github/aurabot/plugins/dsh-aurabot-qq-v2/src/host.js'
 ```
 
+启动时追加该补丁：
+
 ```powershell
 .\dsh.cmd web --patch D:\QQbots\project\github\aurabot\plugins\dev.patch.yml
 ```
 
-插件行的 `name` 用绝对路径最稳。相对路径是按**配置文件所在目录**解析的，
-而 patch 不会改变 loader 的 profile 基准目录，混用很容易找错文件。
-
-### 按包安装（AuraBot 本体）
-
-组合包声明了 `dsh.bundle` 时，走 `dsh plugin` 装进 profile：
+`name` 使用绝对路径可以避免相对路径的解析歧义。通过包管理器链接整个仓库时，也可以执行：
 
 ```powershell
 cd D:\QQbots\project\github\aurabot\plugins\dsh-aurabot-qq-v2
 D:\software_apps\DeepSeekharness\dsh\dsh.cmd plugin --profile web add .
 ```
 
-它会用 pnpm 把 checkout 链接进 profile，并把包名追加到 `dsh.profile.bundles`。
-卸载是 `... remove dsh-aurabot-qq`。
+该命令会将仓库链接到配置档案，并把包名加入 `dsh.profile.bundles`。
 
-## 在 DSH 下写 TypeScript 插件
+## 配置主仓库 HMR
 
-官方口径就一句话：**插件是一个导出 `apply` 的模块，能力全部挂在 `ctx` 上。**
+修改 AuraBot 主仓库的 HMR 监听范围，只需编辑当前配置档案的 `cordis.patch.yml`，不需要为此修改 DSH 源码。文件位置为：
+
+```text
+C:\Users\shangxue\.dsh\profiles\<profile>\cordis.patch.yml
+```
+
+在顶层数组末尾添加以下项目。它与已有的 `ui-settings-general` 等项目同级：
+
+```yaml
+- id: hmr
+  disabled: false
+  config:
+    base: 'D:/QQbots/project/github/aurabot/plugins/dsh-aurabot-qq-v2'
+    root: ['.']
+    ignored: ['**/node_modules', '**/.*', 'cache', 'data', 'test']
+```
+
+`base` 应改为本机 AuraBot 主仓库的绝对路径。保存补丁后，DSH 会重新加载发生变化的插件。
+
+### 配置档案名称
+
+`<profile>` 是启动命令 `dsh --profile <name>` 使用的名称。通过 Web UI 启动时，本机默认使用 `web`，对应 `~/.dsh/profiles/web/cordis.patch.yml`。不要把补丁写入另一个配置档案，否则当前实例不会读取它。
+
+### 必须覆盖 `root`
+
+Web UI 的组合包已经注册 `hmr`，但默认配置为 `root: []`。该值只监听配置文件，不监听源码。必须将其显式覆盖为 `root: ['.']`，并通过 `base` 指向主仓库，源码修改才会进入监听范围。
+
+也可以只写一个绝对路径：
+
+```yaml
+- id: hmr
+  disabled: false
+  config:
+    root: ['D:/QQbots/project/github/aurabot/plugins/dsh-aurabot-qq-v2']
+    ignored: ['**/node_modules', '**/.*', 'cache', 'data', 'test']
+```
+
+两种写法都用于监听源码。`base` 配合 `root: ['.']` 更便于区分仓库位置与监听范围。
+
+### 监听参数
+
+| 字段 | 作用 |
+| --- | --- |
+| `base` | 解析相对 `root` 的基准目录 |
+| `root` | 监听的目录；`[]` 表示不监听源码 |
+| `ignored` | 不参与监听的目录或文件模式 |
+| `debounce` | 合并连续文件事件的等待时间，默认 `100` 毫秒 |
+
+忽略规则应保留 `node_modules`、数据目录和测试产物，避免无关文件触发重载。如果规则误排除了 `src`，修改源码同样不会生效。
+
+HMR 重新加载插件时，会先卸载旧实例并执行清理函数，再加载新模块并调用 `apply`。生效需要满足三个条件：
+
+1. 插件配置具有稳定的 `id`。
+2. 修改的文件属于 DSH 加载器已经加载的模块图。
+3. 文件不是由 AuraBot 自行绕过 DSH 加载器导入的。
+
+社区插件由 AuraBot 自行扫描和导入，因此不使用这套 HMR 机制。
+
+## DSH 插件写法
+
+DSH 插件通过 `apply` 注册能力，并在 Cordis 生命周期内管理资源：
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
 
-export const name = 'my-plugin'
+export const name = 'example'
 
 export function apply(ctx: Context) {
   ctx.effect(() => {
-    const timer = setInterval(() => {}, 5000)
+    const timer = setInterval(() => {
+      ctx.logger.debug('running')
+    }, 5000)
+
     return () => clearInterval(timer)
   })
 }
 ```
 
-几条硬规矩：
+插件卸载时，Cordis 会回收已注册的监听器和效果。自行建立的连接、文件句柄或定时器应在 `ctx.effect()` 的清理函数中释放。依赖其他服务时，通过 `inject` 声明。
 
-- 通过 `ctx` 注册的东西（事件、工具、定时器）在插件卸载时自动回收；自己开的连接用 `ctx.effect()` 返回清理函数
-- 需要别的服务就声明 `inject`，框架会等依赖就绪再调用 `apply`
-- 配置用 Schemastery，**不要导出普通对象**，否则不满足 Cordis 的 Standard Schema 接口
+配置使用 Schemastery 描述：
 
 ```ts
 import type { Context } from '@deepseek-ai/cordis'
 import Schema from '@deepseek-ai/schemastery'
-
-export const name = 'my-plugin'
 
 export interface Config {
   greeting: string
@@ -141,138 +190,93 @@ export function apply(ctx: Context, config: Config) {
 }
 ```
 
-插件还能写成对象形式或 `Service` 类形式，但普通功能插件用函数形式就够了。
+这里的 `Config` 是符合 Standard Schema 接口的配置描述，不是普通对象。
 
-## 热重载
+## TypeScript 加载
 
-### DSH 侧：`@deepseek-ai/dsh-hmr`
+Node.js 24 可以加载使用可擦除语法的 TypeScript 文件，但 `enum`、命名空间、构造函数参数属性等语法需要额外转译。该方式适合临时调试，不能替代发布构建。
 
-WebUI 的 base 组合包已经挂了 `hmr` 行，但默认是：
+正式开发可以采用两种方式：
 
-```yaml
-- id: hmr
-  name: '@deepseek-ai/dsh-hmr'
-  disabled: !!js '!ctx.get(''profileContext'')'
-  config:
-    root: []
+- 由 DSH 加载器配合 TypeScript 运行环境加载源码。
+- 将 TypeScript 编译到 `lib/`，由发布入口加载 JavaScript。
+
+发布包应包含编译后的 JavaScript，不能假定用户环境支持直接运行 TypeScript。
+
+## 社区插件重载
+
+AuraBot 为社区插件实现了独立的文件监听和重载流程：
+
+1. 每 3 秒扫描一次社区插件目录。
+2. 根据目录内文件的修改时间计算版本标识。
+3. 版本变化后停止旧实例。
+4. 将插件复制到 `.aurabot-cache/<版本标识>/`，再导入新快照。
+
+快照路径随版本变化，因此不会继续命中旧文件的 Node.js 模块缓存。入口仍为插件根目录的 `index.mjs` 或 `index.js`。
+
+修改 TypeScript 源码后行为没有变化，通常不是文件监听失效，而是入口加载的构建产物没有更新。
+
+| 现象 | 检查位置 | 处理方法 |
+| --- | --- | --- |
+| 修改 `src/` 后行为不变 | `lib/` 是否重新生成 | 执行插件项目的构建命令 |
+| 已构建但仍运行旧代码 | 修改目录与 AuraBot 实际读取目录是否一致 | 将插件安装到实际数据目录，或在面板重新加载 |
+| 重载后状态仍是旧值 | 模块外缓存、外部进程和未清理的定时器 | 在卸载逻辑中释放资源，避免在模块外保存运行状态 |
+
+### TypeScript 源码重载方案
+
+现有重载机制只会重新导入产物。要让修改 `src/*.ts` 后直接生效，需要增加源码构建或加载环节。
+
+| 方案 | 实现方式 | 适用范围 |
+| --- | --- | --- |
+| 宿主按需转译 | 在生成快照时使用 esbuild 将 `src/index.ts` 转为 ESM | 计划中的默认开发体验 |
+| Node.js 类型剥离 | 直接导入 `src/index.ts` | 仅限可擦除语法的临时调试 |
+| 插件监听构建 | 在插件项目运行 `tsc --watch`，持续更新 `lib/` | 当前版本即可使用 |
+
+按需转译应接入现有快照流程，并扩展入口识别。它只负责生成可执行代码，不代替 `tsc --noEmit` 类型检查。该方案尚未落地前，可使用监听构建。
+
+例如，插件项目的 `package.json` 已定义 `build` 为 `tsc -p tsconfig.build.json` 时，可以添加：
+
+```json
+{
+  "scripts": {
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput"
+  }
+}
 ```
 
-`root: []` 表示**只监听配置文件，不监听源码**。要改源码即时生效，在自己的 patch 层里覆盖它：
-
-```yaml
-- id: hmr
-  disabled: false
-  config:
-    base: 'D:/QQbots/project/github/aurabot/plugins/dsh-aurabot-qq-v2'
-    root: ['.']
-    ignored: ['**/node_modules', '**/.*', 'cache', 'data', 'test']
-```
-
-| 字段 | 默认 | 含义 |
-| --- | --- | --- |
-| `base` | Context 的 base URL（profile 目录） | `root` 的解析基准 |
-| `root` | `["."]` | 监听哪些目录；`[]` 只监听配置 |
-| `ignored` | `node_modules` / 点目录 / `cache` / `data` | 排除路径 |
-| `debounce` | `100` | 合并文件事件的毫秒数 |
-
-保存文件后它做的顺序是：**卸载旧实例（回卷所有 effect）→ 重新 import → 再跑一遍 `apply`**。
-改 `cordis.patch.yml` 也会触发同样的流程，按 `id` 只重挂变化的那几行。
-
-三个前提，缺一个就不生效：
-
-1. 插件行有稳定的 `id`。没有 `id` 的行每次读配置都会生成新 id，任何编辑都被当成「删了再加」
-2. 文件在 ESM / CJS 模块图里。hmr 只替换 loader 加载过的模块
-3. 代码不是被宿主自己 `require` / `import` 进来的——那种模块 hmr 看不到
-
-第 3 条正好解释 AuraBot 社区插件为什么不吃这一套，见下一节。
-
-### TypeScript 能不能直接跑
-
-本机 Node `v24.8.0` 实测可以直接 `import()` 一个 `.ts` 文件，靠的是内置类型剥离。
-但它只吃**可擦除语法**：`enum`、`namespace`、构造函数参数属性、装饰器元数据都会报错。
-
-所以分两种场景：
-
-- 临时调试、语法简单：`.ts` 可以直挂，不用构建
-- 正式开发、要用完整 TS 语法：编译到 `lib/`，或者用 `node --import tsx` 跑
-
-发布包一律发编译后的 JS，不要指望用户的 Node 版本和语法都刚好合适。
-
-### AuraBot 社区插件：已经有一套自己的热重载
-
-社区插件不走 Cordis loader，hmr 管不到。AuraBot 在 `src/core/modules.js` 里自己做了一套：
-
-1. 每 3 秒扫一次 `plugins-data/aurabot/modules/`（`setInterval(sync, 3000)`）
-2. 用整个模块目录里所有文件的 mtime 算一个「版本戳」
-3. 戳变了就停掉旧实例，把整个目录快照到 `.aurabot-cache/<戳>/`，再从快照 `import`
-
-快照路径每次不同，绕开了 Node 的模块缓存，所以**只要文件变了，内存里就是新代码**。
-入口只认根目录的 `index.mjs` 或 `index.js`。
-
-那为什么改完 tell-owner，在终端里触发还是旧行为？按代码路径排，最常见就三种：
-
-| 现象 | 原因 | 处理 |
-| --- | --- | --- |
-| 改了 `src/*.ts`，行为没变 | 没跑 `npm run build`。宿主加载的是 `lib/index.js`，`src` 变了但产物没变 | `npm run build`，3 秒内自动重载 |
-| 构建了但仍是旧的 | 改的不是宿主加载的那个目录（比如改的是仓库里的 `modules/`，宿主读的是 `plugins-data/`） | 用面板「重新加载」，或把产物落到宿主目录 |
-| 面板显示已重载，调用还是旧 | 插件把状态缓存在模块外（全局变量、定时器闭包、外部进程） | 清理自己的缓存；状态放 `ctx` 或数据目录 |
-
-面板上有「重新加载」按钮，走的是 `reload(id)`：停实例、清错误、重扫、再启动。
-日志里会打印「模块「xxx」文件改了，重新加载」，没有这行就说明版本戳没变。
-
-### 让 TypeScript 源码也吃上 HMR
-
-社区插件也是 TypeScript 写的，凭什么只有宿主能吃 HMR？问题出在**加载的是产物**：
-宿主 import 的是 `lib/index.js`，改 `src` 只会让版本戳变、重载发生，但重新 import 的仍是旧 JS。
-
-DSH 能直接热重载 TS，是因为它的 loader 把 `.ts` 当模块本身加载（tsx / Node 类型剥离）。
-照这个思路，社区插件有三条路：
-
-| 方案 | 做法 | 代价 |
-| --- | --- | --- |
-| A. 宿主按需转译 | 扫到 `src/index.ts` 时，用 esbuild 转成 ESM 写进 `.aurabot-cache/<戳>/index.mjs` 再 import | 宿主多一个 esbuild 依赖 |
-| B. Node 类型剥离 | 直接 `import('…/src/index.ts')`，靠 Node 24 内置剥离 | 只支持可擦除语法，`enum` / 装饰器不行 |
-| C. 插件侧 `tsc --watch` | 开发时常驻 `tsc -w`，产物持续写 `lib/`，现有 3 秒扫描自动接住 | 每个插件多一个进程，零宿主改动 |
-
-推荐 **A 作为默认**（体验对齐 DSH），C 作为兜底（今天就能用），B 只用于临时调试。
-
-A 的落点很具体：`importUser()` 现在把整个目录复制到快照再 import，把入口那一份换成
-「转译后的 ESM」即可，版本戳和重载流程都不用动；同时把入口识别从 `index.mjs` / `index.js`
-扩到 `src/index.ts`。
-
-在 A 落地前，还有两个限制要知道：
-
-- 这套只保证**代码**是新的，不做类型检查。类型错误要自己跑 `npm run check`
-- 版本戳跳过 `node_modules`。社区插件自己装的依赖变了，不会触发重载
-
-## 主框架 TypeScript 化（P0）
-
-现状是 `src/**/*.js`，`type: module`，DSH 直接加载 `src/host.js`。目标是全量 TS + 编译产物，
-分四步走，每一步都能单独发版：
-
-1. **铺类型**：加 `tsconfig.json`（`module` / `moduleResolution` 都用 `NodeNext`，`allowJs` + `checkJs` 先开），
-   CI 跑 `tsc --noEmit`，把存量错误清零
-2. **逐目录改名**：`core → tools → onebot → features → host`，一次一个目录，改完跑测试
-3. **切产物**：`rootDir: src`、`outDir: lib`，`main` 改 `lib/host.js`，`files` 加 `lib`；
-   `dsh.bundle.patch` 指向的 `cordis.patch.yml` 不变
-4. **收紧**：`strict: true`、去掉 `any`、补公开类型
-
-开发期两条命令：
+在插件目录运行：
 
 ```powershell
-npm run check      # tsc --noEmit
-npm run build      # tsc -p tsconfig.build.json，产物进 lib/
+npm run dev
 ```
 
-迁移期间宿主仍可以加载 `src/host.js`（JS 与 TS 混跑靠 `allowJs`），
-但发布包必须带 `lib/`，否则 `dsh plugin add` 装上去只会看到一个空目录。
+该进程持续更新 `lib/`，AuraBot 的目录扫描再加载新产物。停止监听进程不会撤销已经生成的文件。
 
-## 排障
+## 主仓库 TypeScript 迁移
 
-| 现象 | 多半是 | 处理 |
+主仓库的 TypeScript 重写按可独立验证的顺序进行：
+
+1. 添加 `tsconfig.json`，`module` 和 `moduleResolution` 使用 `NodeNext`，先通过 `allowJs` 与 `checkJs` 检查现有代码。
+2. 按 `core`、`tools`、`onebot`、`features`、`host` 的顺序迁移，每次只处理一个目录。
+3. 设置 `rootDir: src` 和 `outDir: lib`，将发布入口切换到 `lib/host.js`，并把 `lib/` 加入发布文件清单。
+4. 开启严格类型检查，补齐公开接口类型。
+
+迁移期间保留 JavaScript 与 TypeScript 混合构建能力。发布包必须包含 `lib/`；从源码仓库直接安装时，还需要明确构建步骤，避免安装后缺少入口。
+
+```powershell
+npm run check
+npm run build
+```
+
+包管理器以主仓库最终配置为准。上述命令仅表示脚本名称，不要求主仓库改用 npm 管理依赖。
+
+## 故障排查
+
+| 现象 | 可能原因 | 处理方法 |
 | --- | --- | --- |
-| 插件一直不加载，也没有报错 | `inject` 的服务没人提供，fiber 停在 PENDING | 用官方的 `FiberState.PENDING` 诊断片段枚举 `ctx.registry` |
-| 启动失败 `EADDRINUSE` | WebUI 端口被占 | `--port` 换端口，或关掉旧进程 |
-| 改了 `.ts` 没反应 | hmr 的 `root` 还是 `[]`，或者入口不在 loader 模块图里 | 覆盖 `hmr` 行；确认插件行用的是绝对路径 |
-| 发布包装上后加载失败 | git 安装拿到的是源码，没有 `lib/` | 加 `prepare` 脚本，或发预构建的 tarball / npm 包 |
-| 社区插件改了没生效 | 没构建，或改错了目录 | 见上一节的三种情况 |
+| 插件一直不加载 | `inject` 声明的服务尚未提供 | 检查依赖服务与启动日志 |
+| 启动时报 `EADDRINUSE` | Web UI 端口已被占用 | 更换端口或停止旧进程 |
+| 修改主仓库源码没有反应 | `root` 仍为 `[]`，或 `src` 被忽略 | 检查当前配置档案中的 `hmr` 覆盖项 |
+| 修改配置档案没有反应 | 补丁写入了其他配置档案 | 核对启动命令中的 `<profile>` |
+| 安装发布包后找不到入口 | 发布包没有 `lib/`，或入口字段未更新 | 检查构建结果和发布文件清单 |
+| 社区插件修改后仍运行旧代码 | 未构建，或修改了非加载目录 | 按社区插件重载一节逐项检查 |

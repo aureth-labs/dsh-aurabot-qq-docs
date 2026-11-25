@@ -1,102 +1,62 @@
-# 装社区模块
+# 安装社区模块
 
-模块（module）是 AuraBot 里的功能件：点歌、生图、语音、桌宠都是模块。
-和 DSH 插件不同，模块**不用改 profile、不用重启 DSH**，在面板里装完就能用。
+V1 的功能扩展称为模块。模块通过 AuraBot 面板安装，通常不需要修改 DSH 配置或重启 DSH。
 
-## 面板里装（推荐）
+## 从市场安装
 
-1. 打开 Aurabot 面板 →「生活」分组 →「模块市场」
-2. 搜关键词（如 `点歌`、`生图`、`语音`），或者直接翻列表
-3. 点安装 → 选版本 → 等它下完
-4. 回面板「模块市场 → 已安装」，启用，然后按模块自己的 README 配置
+1. 打开 AuraBot 面板的「模块市场」。
+2. 查找模块并选择版本。
+3. 安装后在「已安装」中启用。
+4. 按模块说明完成配置。
 
-市场里能装的模块，代码都在作者自己的仓库和 Release 里，市场只存索引：
-
-```text
-读 market.json → 选版本 → 下载 zip → 校验 sha256 → 解压
-              → 读 package.json 里的 aurabot 字段 → 加载 main
-```
-
-索引源（自动构建，每天重建）：
+市场索引位于：
 
 ```text
 https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 ```
 
-## 市场为什么不存代码
+## 索引与代码
 
-作者在自己的仓库里写模块，CI 构建、发 Release；市场只维护一份索引。
-
-```text
-作者仓库 push
-   └─ Actions：装依赖 → 构建 → 打 zip → 发 Release
-        └─ 回写 package.json.aurabot.artifact{url,sha256,size}
-
-市场仓库
-   registry.jsonl（一行一个 package.json 的 GitHub 链接）
-   └─ 构建：拉取 → 校验 → market.json + report.md
-        └─ 发布到 market 分支
-
-宿主
-   market.json → 选版本 → 下载 zip → 校验 sha256 → 解压 → 加载入口
-```
-
-好处很直接：作者改代码不用等谁审批，你装的时候还能核对 `sha256`。
-想把自己的模块收进去，看[发布到市场](/dev/market-publish)。
-
-## 命令行装（DSH 组合包）
-
-模块如果是以 DSH 组合包的形式发布，也可以用 DSH 自己的插件命令：
-
-```bash
-dsh plugin --profile <profile> add <来源>
-```
-
-| 写法 | 用途 |
-| --- | --- |
-| `github:owner/repo` | 从 GitHub 装，走仓库里的构建脚本 |
-| `github:owner/repo#<commit-sha>` | 同上，但锁死提交，推荐 |
-| `./local-plugin` | 本地目录，开发时用 |
-| `some-package` | 已经发布到 npm 的包 |
-| `./pkg-1.0.0.tgz` | 打包好的 tarball |
-
-组合包装完要重启 DSH；面板市场装的模块不用。
-
-## 自己写的模块放哪
+模块代码保存在作者仓库和 Release 中，市场仓库只维护收录清单并生成索引。
 
 ```text
-%USERPROFILE%\.dsh\plugins-data\aurabot\modules\<你的模块>\
+作者仓库：构建源码 → 发布 Release → 提供下载地址与 sha256
+市场仓库：读取收录清单 → 校验清单 → 生成 market.json
+AuraBot：读取索引 → 下载并校验产物 → 加载入口
 ```
 
-放进去就生效，**保存即热重载**，升级 AuraBot 也不会覆盖这个目录。
-模块的最小结构见[插件结构](/dev/anatomy)。
+这种结构使作者可以独立发布版本，同时让客户端在加载前校验构建产物。发布方法见[发布到市场](/dev/market-publish)。
 
-## 权限与安全
+## 本地模块
 
-装模块时面板会显示它声明了哪些能力（`network`、`filesystem`、`process`、`plugin-internals` 等）。
-**这些只是声明，不是沙箱**——模块和 AuraBot 在同一个进程里跑，能碰到你的账号配置。
+Windows 默认位置：
 
-| 声明 | 实际含义 |
+```text
+%USERPROFILE%\.dsh\plugins-data\aurabot\modules\<模块 ID>\
+```
+
+本地模块由 AuraBot 自动重载。修改 TypeScript 源码后仍需先构建，因为运行时读取的是 `package.json` 的 `main` 所指定的 JavaScript 文件。
+
+## 能力声明
+
+| 声明 | 含义 |
 | --- | --- |
-| `network` | 会往外发请求 |
-| `filesystem` | 会读写本机文件 |
-| `process` | 会起外部程序（ffmpeg、python 之类） |
-| `plugin-config` | 能读写自己的模块设置 |
-| `plugin-internals` | 用了 AuraBot 内部接口，升级后可能失效 |
+| `network` | 发起网络请求 |
+| `filesystem` | 读写本地文件 |
+| `process` 或 `exec` | 启动外部进程 |
+| `plugin-config` | 读写模块配置 |
+| `plugin-internals` | 使用 AuraBot 内部接口 |
 
-所以：只装你看得懂来源的模块；看到 `process` 就先翻一眼它的 README 说要跑什么。
+能力声明只是安装信息，不限制模块实际行为。安装前应检查来源、README 和代码。
 
 ## 更新与卸载
 
-都在「模块市场 → 已安装」里点。卸载不会删模块自己存在数据目录里的东西，
-想清干净就手动删 `modules/<模块名>/`。
+在「模块市场 → 已安装」中更新或卸载。卸载不一定删除模块写入数据目录的内容，需要清理时按模块说明处理。
 
-## 模块改了没生效
+## 修改未生效
 
-| 现象 | 原因 |
+| 情况 | 处理方法 |
 | --- | --- |
-| 改 `src/*.ts` 没反应 | 宿主加载的是构建产物，先 `npm run build` |
-| 改 `index.mjs` 没反应 | 等 3 秒（宿主每 3 秒扫一次目录），还不行就看面板日志 |
-| 装了新版本没变化 | 组合包要重启 DSH |
-
-开发细节见[如何开发我们的框架](/dev/develop-framework)。
+| 只修改了 `src/*.ts` | 执行构建，生成新的 JavaScript 产物 |
+| 修改后仍未重载 | 检查实际加载目录和面板日志 |
+| 安装的是 DSH 组合包 | 按 DSH 插件要求重启宿主 |

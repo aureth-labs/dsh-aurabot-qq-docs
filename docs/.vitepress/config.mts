@@ -1,26 +1,26 @@
 import { defineConfig } from 'vitepress'
 
 const guide = [
-  { text: '这是什么', link: '/guide/what-is-this' },
-  { text: '准备', link: '/guide/prepare' },
-  { text: '装 DeepSeek Harness', link: '/guide/install' },
+  { text: '框架概览', link: '/guide/what-is-this' },
+  { text: '安装准备', link: '/guide/prepare' },
+  { text: '安装 DeepSeek Harness', link: '/guide/install' },
   { text: '配置模型', link: '/guide/models' },
   { text: '安装 AuraBot', link: '/guide/install-aurabot' },
   {
-    text: '接入平台',
+    text: '平台连接',
     items: [
       { text: '平台总览', link: '/guide/platforms/' },
       { text: '接入 QQ', link: '/guide/platforms/qq' },
     ],
   },
   {
-    text: '认识面板',
+    text: '面板与命令',
     items: [
-      { text: '总览与开关', link: '/guide/configure' },
+      { text: '面板配置', link: '/guide/configure' },
       { text: 'QQ 命令', link: '/guide/commands' },
     ],
   },
-  { text: '装社区模块', link: '/guide/install-plugin' },
+  { text: '安装社区模块', link: '/guide/install-plugin' },
 ]
 
 const features = [
@@ -37,12 +37,12 @@ const features = [
     text: '说和唱',
     items: [
       { text: '语音', link: '/features/voice' },
-      { text: 'TTS：换一个嗓子', link: '/features/tts' },
+      { text: '语音合成', link: '/features/tts' },
       { text: '翻唱', link: '/features/cover' },
     ],
   },
   {
-    text: '其它本事',
+    text: '其他功能',
     items: [
       { text: '画图', link: '/features/image' },
       { text: '点歌', link: '/features/music' },
@@ -55,31 +55,48 @@ const features = [
 ]
 
 const dev = [
-  { text: '为什么用 TypeScript', link: '/dev/why-typescript' },
-  { text: '插件结构', link: '/dev/anatomy' },
-  { text: '写第一个插件', link: '/dev/first-plugin' },
-  { text: '十五分钟写一个模块', link: '/dev/module-quickstart' },
-  { text: '构建与发布', link: '/dev/build-release' },
-  { text: '发布到市场', link: '/dev/market-publish' },
-  { text: '面板：client → dist', link: '/dev/panel' },
-  { text: '如何开发我们的框架', link: '/dev/develop-framework' },
-  { text: '文档写作规范', link: '/dev/docs-style' },
-  { text: '贡献指南', link: '/dev/contributing' },
+  {
+    text: '主仓库本体开发',
+    items: [
+      { text: '框架开发环境', link: '/dev/develop-framework' },
+    ],
+  },
+  {
+    text: '插件开发',
+    items: [
+      { text: '为什么用 TypeScript', link: '/dev/why-typescript' },
+      { text: '插件结构', link: '/dev/anatomy' },
+      { text: '写第一个插件', link: '/dev/first-plugin' },
+      { text: '快速试用模块', link: '/dev/module-quickstart' },
+      { text: '构建与发布', link: '/dev/build-release' },
+      { text: '发布到市场', link: '/dev/market-publish' },
+      { text: '编写面板', link: '/dev/panel' },
+    ],
+  },
+  {
+    text: '文档开发',
+    items: [
+      { text: '开始编写文档', link: '/dev/documentation' },
+      { text: '写作规范', link: '/dev/docs-style' },
+      { text: '术语表', link: '/dev/glossary' },
+      { text: '贡献指南', link: '/dev/contributing' },
+    ],
+  },
 ]
 
 const reference = [
-  { text: '模块 API 速查', link: '/reference/module-api' },
-  { text: '插件接口 v2', link: '/reference/plugin-api' },
-  { text: '设计要点', link: '/reference/design' },
-  { text: '架构与决策', link: '/reference/architecture' },
+  { text: 'V1 模块 API', link: '/reference/module-api' },
+  { text: 'V2 插件接口设计', link: '/reference/plugin-api' },
+  { text: 'V1 实现要点', link: '/reference/design' },
+  { text: '插件市场架构', link: '/reference/architecture' },
   { text: '主框架改造清单', link: '/reference/host-changes' },
-  { text: '第三方与致谢', link: '/reference/third-party' },
+  { text: '第三方声明与致谢', link: '/reference/third-party' },
 ]
 
 export default defineConfig({
   lang: 'zh-CN',
   title: 'AuraBot 文档',
-  description: '把 AI 接进群聊的框架 · 多平台、插件化、TypeScript · V2',
+  description: 'AuraBot 的安装、使用与插件开发文档',
   base: '/dsh-aurabot-qq-docs/',
   cleanUrls: true,
   lastUpdated: true,
@@ -99,7 +116,7 @@ export default defineConfig({
     sidebar: {
       '/guide/': [{ text: '入门', items: guide }],
       '/features/': [{ text: '功能', items: features }],
-      '/dev/': [{ text: '开发', items: dev }],
+      '/dev/': dev,
       '/reference/': [{ text: '参考', items: reference }],
     },
 
