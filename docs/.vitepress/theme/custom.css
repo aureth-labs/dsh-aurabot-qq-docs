@@ -162,15 +162,15 @@ body {
   background: transparent;
 }
 
-/* ── 顶栏：毛玻璃，不要重阴影 ── */
+/* ── 顶栏：实底，不要毛玻璃（毛玻璃会把底纹糊成一片脏影） ── */
 
 .VPNav {
-  backdrop-filter: blur(14px) saturate(160%);
+  background: var(--vp-c-bg);
   border-bottom: 1px solid var(--vp-c-divider);
 }
 
 .VPNavBar {
-  background: transparent;
+  background: var(--vp-c-bg);
 }
 
 .VPNavBarTitle .title {
@@ -213,14 +213,14 @@ body {
 
 .VPHero {
   background:
-    radial-gradient(560px 300px at 16% 8%, rgba(157, 192, 242, 0.55), transparent 70%),
-    radial-gradient(520px 320px at 84% 4%, rgba(185, 173, 240, 0.4), transparent 70%);
+    radial-gradient(520px 300px at 18% 42%, rgba(157, 192, 242, 0.38), transparent 72%),
+    radial-gradient(480px 300px at 82% 30%, rgba(185, 173, 240, 0.26), transparent 72%);
 }
 
 .dark .VPHero {
   background:
-    radial-gradient(560px 300px at 16% 8%, rgba(47, 111, 208, 0.22), transparent 70%),
-    radial-gradient(520px 320px at 84% 4%, rgba(109, 91, 208, 0.18), transparent 70%);
+    radial-gradient(520px 300px at 18% 42%, rgba(47, 111, 208, 0.18), transparent 72%),
+    radial-gradient(480px 300px at 82% 30%, rgba(109, 91, 208, 0.14), transparent 72%);
 }
 
 .VPHero .name .clip {
@@ -301,6 +301,7 @@ body {
 .vp-doc th {
   background: var(--vp-c-brand-soft);
   color: var(--vp-c-text-1);
+  white-space: nowrap;
 }
 
 .vp-doc tr:nth-child(2n) {
@@ -371,8 +372,279 @@ div[class*='language-'] > span.lang {
 }
 
 .VPFooter {
+  display: none;
+}
+
+/* ── 矢量图容器：点击放大，Esc 退出 ── */
+
+.ab-diagram {
+  margin: 30px 0;
+}
+
+.ab-diagram__frame {
+  position: relative;
+  padding: 22px 20px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--ab-radius);
+  background: linear-gradient(180deg, var(--vp-c-bg-elv) 0%, var(--vp-c-bg-soft) 100%);
+  cursor: zoom-in;
+}
+
+.ab-diagram.is-zoomed .ab-diagram__frame {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  padding: 6vh 6vw;
+  border: none;
+  border-radius: 0;
+  background: var(--vp-c-bg);
+  overflow: auto;
+  cursor: zoom-out;
+}
+
+.ab-diagram__canvas {
+  width: 100%;
+}
+
+.ab-diagram__btn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 4px 12px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg-elv);
+  color: var(--vp-c-text-2);
+  font-size: 12px;
+  line-height: 18px;
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+
+.ab-diagram__btn:hover {
+  border-color: var(--vp-c-brand-3);
+  color: var(--vp-c-brand-1);
+}
+
+.ab-diagram figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--vp-c-text-3);
+}
+
+body.ab-diagram-lock {
+  overflow: hidden;
+}
+
+/* ── 两张矢量图共用的画法 ── */
+
+.ab-arch,
+.ab-flow {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.ab-arch .layer {
+  fill: var(--vp-c-bg-elv);
+  stroke: var(--vp-c-border);
+  stroke-width: 1.5;
+}
+
+.ab-arch .layer--accent {
+  fill: var(--vp-c-brand-soft);
+  stroke: var(--vp-c-brand-3);
+}
+
+.ab-arch .t,
+.ab-flow .t {
+  fill: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ab-arch .d {
+  fill: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-base);
+  font-size: 15px;
+}
+
+.ab-arch .tag {
+  fill: var(--vp-c-text-3);
+  font-family: var(--vp-font-family-base);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ab-arch .badge {
+  fill: var(--vp-c-text-3);
+  font-family: var(--vp-font-family-base);
+  font-size: 12.5px;
+  letter-spacing: 0.5px;
+}
+
+.ab-arch .arrow {
+  stroke: var(--vp-c-brand-3);
+  stroke-width: 2;
+}
+
+.ab-arch .arrow-head,
+.ab-flow .arrow-head {
+  fill: var(--vp-c-brand-3);
+}
+
+.ab-flow .node {
+  fill: var(--vp-c-bg-elv);
+  stroke: var(--vp-c-border);
+  stroke-width: 1.5;
+}
+
+.ab-flow .node--accent {
+  fill: var(--vp-c-brand-soft);
+  stroke: var(--vp-c-brand-3);
+}
+
+.ab-flow .t {
+  font-size: 17px;
+}
+
+.ab-flow .note {
+  fill: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-base);
+  font-size: 14.5px;
+}
+
+.ab-flow .spine {
+  stroke: var(--vp-c-brand-3);
+  stroke-width: 2;
+}
+
+.ab-flow .dash {
+  stroke: var(--vp-c-divider);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 5;
+}
+
+.ab-flow .branch {
+  fill: none;
+  stroke: var(--vp-c-brand-3);
+  stroke-width: 2;
+  opacity: 0.55;
+}
+
+.ab-flow .hub {
+  fill: var(--vp-c-brand-soft);
+  stroke: var(--vp-c-brand-2);
+  stroke-width: 2;
+}
+
+.ab-flow .hub-t {
+  fill: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.ab-flow .hub-s {
+  fill: var(--vp-c-text-3);
+  font-family: var(--vp-font-family-base);
+  font-size: 12.5px;
+}
+
+/* ── 页脚：多列超链接 ── */
+
+.ab-footer {
   border-top: 1px solid var(--vp-c-divider);
   background: var(--vp-c-bg-alt);
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+
+.ab-footer__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 40px 24px 28px;
+}
+
+.ab-footer__brand {
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.ab-footer__name {
+  margin: 0 0 8px;
+  color: var(--vp-c-text-1);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.ab-footer__tagline {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--vp-c-text-3);
+}
+
+.ab-footer__cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 48px;
+  flex: 2 1 520px;
+}
+
+.ab-footer__col ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ab-footer__col li + li {
+  margin-top: 8px;
+}
+
+.ab-footer__title {
+  margin: 0 0 12px;
+  color: var(--vp-c-text-1);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.ab-footer__col a {
+  color: var(--vp-c-text-2);
+  transition: color 0.18s ease;
+}
+
+.ab-footer__col a:hover,
+.ab-footer__legal a:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.ab-footer__legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 24px;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 14px 24px 24px;
+  border-top: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-3);
+  font-size: 12.5px;
+}
+
+.ab-footer__legal a {
+  color: var(--vp-c-text-2);
+  text-decoration: underline;
+  text-decoration-color: var(--vp-c-brand-3);
+  text-underline-offset: 3px;
 }
 
 /* ── 主题切换时别闪 ── */

@@ -49,7 +49,4 @@ npm install -D typescript @types/node
 模板里已经写好了 `tsconfig.json`（后台，`src/` → `lib/`）和 `tsconfig.client.json`
 （面板，`client/` → `dist/`），不用自己调。
 
-## 下一步
-
-- 目录怎么摆：[插件结构](/dev/anatomy)
-- 怎么发版：[构建与发布](/dev/build-release)
+目录怎么摆见[插件结构](/dev/anatomy)，怎么发版见[构建与发布](/dev/build-release)。

@@ -23,6 +23,27 @@
 https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 ```
 
+## 市场为什么不存代码
+
+作者在自己的仓库里写模块，CI 构建、发 Release；市场只维护一份索引。
+
+```text
+作者仓库 push
+   └─ Actions：装依赖 → 构建 → 打 zip → 发 Release
+        └─ 回写 package.json.aurabot.artifact{url,sha256,size}
+
+市场仓库
+   registry.jsonl（一行一个 package.json 的 GitHub 链接）
+   └─ 构建：拉取 → 校验 → market.json + report.md
+        └─ 发布到 market 分支
+
+宿主
+   market.json → 选版本 → 下载 zip → 校验 sha256 → 解压 → 加载入口
+```
+
+好处很直接：作者改代码不用等谁审批，你装的时候还能核对 `sha256`。
+想把自己的模块收进去，看[发布到市场](/dev/market-publish)。
+
 ## 命令行装（DSH 组合包）
 
 模块如果是以 DSH 组合包的形式发布，也可以用 DSH 自己的插件命令：

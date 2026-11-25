@@ -5,7 +5,7 @@
 底子是 RVC（Applio，固定版本）。它有两个前提：**环境**和**音色**。
 
 ::: warning 只有 Windows 能用
-RVC 这条链路目前只在 Windows 跑通，Linux / macOS 装得上但转换会失败。见[常见问题](/guide/faq)。
+RVC 这条链路目前只在 Windows 跑通，Linux / macOS 装得上但转换会失败，具体见下面的[排错](#排错)。
 :::
 
 ## 完整流水线

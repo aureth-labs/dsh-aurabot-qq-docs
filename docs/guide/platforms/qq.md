@@ -1,7 +1,7 @@
 # 接入 QQ
 
 AuraBot 不直接和腾讯的服务器打交道，它连的是一个 **OneBot v11 网关**。
-网关负责让机器人号上线，插件只负责「收到消息 → 想 → 发回去」。
+网关负责让机器人号上线，框架只负责「收到消息 → 想 → 发回去」。
 
 ```text
 QQ ⇄ 网关（SnowLuma / NapCat / LLOneBot / Lagrange）⇄ AuraBot ⇄ DSH 会话
@@ -49,7 +49,8 @@ NapCat、LLOneBot、Lagrange、Docker 版 SnowLuma 都行：
 
 ## 白名单别忘了
 
-把机器人号拉进群之后，还要在面板「说话 → 权限」把**群号加进群白名单**。拉进群 ≠ 她会说话。见[QQ 命令与白名单](/guide/commands)。
+把机器人号拉进群之后，还要在「权限」页把**群号加进群白名单**。拉进群 ≠ 她会说话，
+配置项的位置和含义见[认识面板](/guide/configure#白名单与权限)。
 
 ## 关于封号
 

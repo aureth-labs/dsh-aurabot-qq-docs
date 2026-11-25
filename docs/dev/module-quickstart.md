@@ -124,8 +124,5 @@ npm run pack
 
 「是不是主人开口」由宿主按「最近 5 分钟主人私聊活动」判定，模块既不能自报，也不能把外部内容伪装成主人输入来绕过。调用方传的 `moduleId` / `source` 一律不认。
 
-## 下一步
-
-- 完整接口：[模块 API 速查](/reference/module-api)
-- TypeScript 路线：[写第一个插件](/dev/first-plugin)
-- 热重载怎么工作：[如何开发我们的框架](/dev/develop-framework)
+完整接口见[模块 API 速查](/reference/module-api)，TypeScript 路线见[写第一个插件](/dev/first-plugin)，
+热重载怎么工作见[如何开发我们的框架](/dev/develop-framework)。

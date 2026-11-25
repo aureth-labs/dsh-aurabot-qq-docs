@@ -137,7 +137,4 @@ repo/
 发版脚本逐个比 `version`，谁变了就构建谁、发谁的 Release。
 市场那边是**一行一个 `package.json` 链接**，所以同一个仓库可以收录多条。
 
-## 下一步
-
-- 编译细节：[构建与发布](/dev/build-release)
-- 面板怎么写：[面板：client → dist](/dev/panel)
+编译细节见[构建与发布](/dev/build-release)，面板怎么写见[面板：client → dist](/dev/panel)。
