@@ -46,6 +46,8 @@ export default defineConfig({
 
     socialLinks: [{ icon: 'github', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev' }],
 
+    search: { provider: 'local' },
+
     editLink: {
       pattern: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/edit/docs/docs/:path',
       text: '在 GitHub 上编辑此页',
