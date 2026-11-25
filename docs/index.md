@@ -71,6 +71,7 @@ https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json
 | [面板：client → dist](/dev/panel) | 要给自己插件做一页 UI |
 | [文档写作规范](/dev/docs-style) | 想改这些文档 |
 | [贡献指南](/dev/contributing) | 想收录插件、提 PR |
+| [如何开发我们的框架](/dev/develop-framework) | 要改宿主、起本地工作区、调热重载 |
 
 ## 给 AI 用的规范
 

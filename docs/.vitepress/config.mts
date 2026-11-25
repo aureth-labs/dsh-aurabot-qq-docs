@@ -60,6 +60,7 @@ export default defineConfig({
             { text: '面板：client → dist', link: '/dev/panel' },
             { text: '文档写作规范', link: '/dev/docs-style' },
             { text: '贡献指南', link: '/dev/contributing' },
+            { text: '如何开发我们的框架', link: '/dev/develop-framework' },
           ],
         },
         {
@@ -93,6 +94,7 @@ export default defineConfig({
             { text: '面板：client → dist', link: '/dev/panel' },
             { text: '文档写作规范', link: '/dev/docs-style' },
             { text: '贡献指南', link: '/dev/contributing' },
+            { text: '如何开发我们的框架', link: '/dev/develop-framework' },
           ],
         },
         {
