@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "AuraBot 文档站（VitePress）",
+  "packageManager": "pnpm@11.1.2",
   "scripts": {
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",

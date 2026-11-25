@@ -34,12 +34,14 @@ npm test
 ```text
 docs/                          ← 文档源码（本页就在这）
 package.json                   ← VitePress 依赖
+pnpm-lock.yaml                 ← 依赖锁（用 pnpm，跟 DSH 保持一致）
+pnpm-workspace.yaml            ← pnpm 设置（放行 esbuild 的构建脚本）
 .github/workflows/build.yml    ← 构建校验
 ```
 
 1. 改对应 `.md`，写作要求见[文档写作规范](/dev/docs-style)
-2. 本地预览：`npm run docs:dev`
-3. 本地构建：`npm run docs:build`（CI 跑的就是这条）
+2. 本地预览：`pnpm docs:dev`
+3. 本地构建：`pnpm docs:build`（CI 跑的就是这条）
 4. 提 PR 到 `main` 分支
 
 合并后 `main` 上的 Pages 工作流会自动构建并发布到
