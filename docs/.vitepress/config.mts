@@ -25,7 +25,7 @@ export default defineConfig({
             text: '插件市场镜像（market.json）',
             link: 'https://github.com/aureth-labs/dsh-aurabot-qq-market-dev/blob/market/market.json',
           },
-          { text: '模板仓库', link: 'https://github.com/shangxueink/dsh-aurabot-qq-plugins-template' },
+          { text: '模板仓库', link: 'https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template' },
           { text: '示例插件', link: 'https://github.com/shangxueink/dsh-aurabot-qq-market-dev-plugins' },
           { text: '宿主 AuraBot', link: 'https://github.com/aureth-labs/dsh-aurabot-qq' },
           { text: 'llms.txt（给 AI 看）', link: `${SITE}/llms.txt` },
