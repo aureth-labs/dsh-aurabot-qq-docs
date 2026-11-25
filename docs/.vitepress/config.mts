@@ -12,6 +12,7 @@ export default defineConfig({
   base: '/dsh-aurabot-qq-docs/',
   cleanUrls: true,
   lastUpdated: true,
+  appearance: true,
 
   themeConfig: {
     nav: [
