@@ -34,3 +34,5 @@ npm run dev
 ## 验证发布形态
 
 执行 `npm run build` 生成 `lib/` 和 `dist/`，再执行 `npm run start`。此时服务端使用 `index.mjs` 加载编译后的应用，浏览器加载面板产物。可以用聊天沙盒的本地指令验证一条消息的接收、处理和发送，再测试需要模型的插件。
+
+维护公共 SDK 时，在框架根目录运行 `npm run pack:sdk`。压缩包在 `dist/`，包含 ESM 入口、声明、API 文档和许可证。模板仓库和社区仓库的 `vendor/` 使用同一份压缩包。

@@ -36,7 +36,11 @@ const entries = ctx.chatLog.read(target, '2026-11-27')
 
 ## 消息和平台
 
-用 `h.text`、`h.image`、`h.voice` 和 `h.file` 构造元素。`h.parse` 和 `h.select` 支持解析与查询。适配器根据能力表处理输出。需要按目标发送时，保存平台、Bot 实例、会话类型和目标 ID，使用 `ctx.bots.get(botId, platform)` 选取原 Bot。
+用 `h.text`、`h.image`、`h.voice` 和 `h.file` 构造元素。`h.parse` 和 `h.select` 支持解析与查询。适配器根据能力表处理输出。
+
+用 `await session.send(h.poke())` 回戳当前发言人。也可以传入目标 ID，或写成 `<poke id="123"/>`。OneBot v11 在群里按元素顺序发送消息和戳一戳，私聊只允许戳当前接收人。缺少此能力的平台显示「[戳一戳]」。
+
+需要按目标发送时，保存平台、Bot 实例、会话类型和目标 ID，使用 `ctx.bots.get(botId, platform)` 选取原 Bot。
 
 适配器包声明 `aurabot.kind: "adapter"`。在 apply 中等待 `ctx.adapter(spec, config)`，在 connect 中完成握手并返回 Bot，接收平台事件后使用 runtime.emitMessage 投递入站消息。物理连接断开或恢复时，更新 Bot 状态并调用 `runtime.statusChanged(reason?)`，原实例的 ID 在重连期间稳定。平台专有调用使用 `bot.internal(action, params)`。只适用于 QQ 的插件声明 `aurabot.platforms: ["qq"]`。
 
