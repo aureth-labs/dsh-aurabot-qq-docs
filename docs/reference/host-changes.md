@@ -27,7 +27,7 @@
 | `version` | `version` | 语义化版本 |
 | `description` | `description` | 功能说明 |
 | `category` | `aurabot.category` | 单选分类 |
-| `platforms` | `aurabot.platforms` | 缺省为 `["qq"]` |
+| `platforms` | `aurabot.platforms` | API 2 缺省为 `["*"]`；平台专属插件显式声明平台名 |
 | `capabilities` | `aurabot.capabilities` | 能力声明 |
 | `minPluginVersion` | `aurabot.minPluginVersion` | 最低宿主版本 |
 | `api` | `aurabot.api` | 接口版本 |
