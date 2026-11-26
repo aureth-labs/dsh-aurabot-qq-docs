@@ -8,6 +8,18 @@
 
 `ctx.updateConfig(patch)` 合并当前实例的配置，按 Schema 校验后保存，也接受一个从当前配置计算补丁的函数。超出范围或类型不符会抛出异常，整次更新都不会落盘。附加实例的配置只保存它覆盖的字段；主实例的密码字段不会继承。面板保存同样会检查当前插件的 Schema。
 
+## 在指定会话发送和读取流水
+
+在指令或中间件中，用 `await session.send(content)` 回复当前会话。定时任务可以保存 `session.target`，稍后用 `ctx.sendTo(target, content)` 投递。目标保留平台、机器人实例、会话类型和平台原始 ID，文件、图片和语音都通过元素树发送。
+
+```ts
+const target = { platform: 'telegram', botId: 'office', type: 'private', id: '42' } as const
+await ctx.sendTo(target, h.text('提醒时间到了'), { proactive: true })
+const entries = ctx.chatLog.read(target, '2026-11-27')
+```
+
+主动发送开启 `proactive` 后，收到投递确认才记录发言。也可用 `ctx.chatLog.append(target, who, text, userId)` 追加活动。读写都按当前人格和目标隔离，原有 QQ 日流水归默认 OneBot 实例；已标记遗忘的消息从结果中排除。广播返回每个目标的投递结果。
+
 ## 入站、回复和模型工具
 
 | 调用 | 行为 |
