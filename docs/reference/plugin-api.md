@@ -27,3 +27,16 @@
 适配器包声明 `aurabot.kind: "adapter"`。在 apply 中等待 `ctx.adapter(spec, config)`，在 connect 中完成握手并返回 Bot，接收平台事件后使用 runtime.emitMessage 投递入站消息。平台专有调用使用 `bot.internal(action, params)`。只适用于 QQ 的插件声明 `aurabot.platforms: ["qq"]`。
 
 [完整示例与本地运行](../dev/first-plugin)
+
+### 读取引用消息
+
+入站消息包含引用时，命令和中间件可以从 `session.quote` 读取原消息的 `id` 和 `channelId`。宿主先查当前平台、Bot 账号与会话的本地记录，再向适配器查询。能确认来源时返回 `userId` 和 `content`；已撤回的引用带有 `deletedAt`。
+
+```ts
+ctx.command("引用内容").action(async ({ session }) => {
+  const quote = session.quote
+  if (!quote) return session.send("请引用一条消息")
+  if (quote.deletedAt) return session.send("原消息已撤回")
+  return session.send(quote.content || "未能读取原消息正文")
+})
+```
