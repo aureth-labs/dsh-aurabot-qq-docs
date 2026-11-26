@@ -82,3 +82,9 @@ ctx.command("引用内容").action(async ({ session }) => {
 | `message-deleted`、`message-updated` | 撤回或编辑。按 `platform`、`botId`、`channelId` 与 `messageId` 定位消息。 |
 
 对支持撤回且返回频道和消息 ID 的适配器，可在 `send` 监听器里调用 `await event.bot.deleteMessage(event.channelId, event.messageId)`。主动私信时频道 ID 取决于平台回执。试运行、入队和被取消的发送不会触发成功事件。
+
+## 按会话选择模型
+
+「会话模型」插件在启用「注册指令」后提供 `/model`。默认只有主人可以操作，私聊和群聊各有开关。选择目标时可用列表序号或完整的 `供应商/模型`。`/model 默认` 清除当前房间的选择。
+
+插件可通过 `ctx.llm.config.model.list()` 读取模型目录，用 `get(session.target, session.bot.selfId)` 读取该房间的覆盖项。用 `set(target, selfId, { provider, model })` 保存，传 `null` 则清除。设置随登录身份和房间持久化，应用于后续对话及其中的工具轮次。
