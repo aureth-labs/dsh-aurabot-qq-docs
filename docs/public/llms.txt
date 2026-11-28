@@ -34,7 +34,7 @@ package.json 示例：
 
 有自定义面板时设置 aurabot.panel 为 "./dist/panel.js"。适配器声明 aurabot.kind 为 "adapter"，并列出实际支持的平台。服务插件声明 kind 为 "service"。逐项声明实际使用的 capabilities。具名导出 reusable = true 表示支持多个独立配置实例。
 
-在 src/index.ts 静态声明配置。让框架管理插件总开关。连接、定时器和处理器的注册都放在 apply 中，便于用户先配置再启用。
+在 src/index.ts 静态声明配置。模板的 scripts/release.mjs 在打包时调用 config.toSettings()，把表单字段写入 ZIP 内的 package.json.aurabot.settings。检查停用预览时，应安装这个 ZIP 或解压后的完整目录。让框架管理插件总开关。连接、定时器和处理器的注册都放在 apply 中，便于用户先配置再启用。
 
 ```ts
 import { Schema, type Ctx } from '@aurabot/plugin-api'
