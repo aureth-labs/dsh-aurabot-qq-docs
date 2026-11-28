@@ -1,204 +1,73 @@
-# AuraBot 插件开发约定（给 AI 和作者看）
+# AuraBot V2 插件开发指南
 
-> 机器可读的规范摘要 + 动手步骤。有人跟你说「我想写个 XX 插件」，
-> 从这里开始：先看第 1 节选语言，再看第 5 节照着做。
+适用于从控制台「已安装」页发起的开发任务。在用户给出的插件目录工作。先读该目录下的 API.md 和 aurabot.d.ts，按当前宿主版本核对接口。先确定插件 ID、触发方式、需要的权限和预期回复。
 
-## 0. 一句话
+## 文件放在哪里
 
-插件 = 一个 GitHub 仓库里 `modules/<名字>/` 的一个包。用 TypeScript 写，
-构建产物分两半：后台 `lib/`、面板 `dist/`。仓库自己的 GitHub Actions 打成 zip 发 Release，
-把地址回写进 `package.json.aurabot.artifact`；市场索引里加一行链接就收录了。
+- 本地插件目录可在「已安装 → 打开文件夹」找到。新建 modules/<id>/，修改已有插件时进入其现有目录。id 使用小写字母、数字和连字符。
+- 本地简单插件可使用 modules/<id>.mjs。计划进入市场的插件使用独立仓库内的 modules/<id>/package.json、src/index.ts、build.mjs、tsconfig.json、README.md 和 LICENSE。
+- 有自定义配置页面时，增加 client/panel.ts 和 tsconfig.client.json。后台编译到 lib/index.js，面板编译到 dist/panel.js。
+- 可以从官方模板仓的 modules/hello 复制构建配置。在该仓内保留 vendor/ 中的 SDK 开发包及对应 devDependencies 路径。构建时使用包管理器提供的本地 TypeScript。
+- 源码放在插件目录。运行数据通过 ctx 的数据接口保存在实例的数据目录，避免插件升级替换源码时丢失。
 
-## 1. 能不能不用 TypeScript？
+## 清单与配置
 
-**能，直接写 JavaScript 完全没问题。** 把 `src/*.ts` 换成 `src/*.js`、`build` 脚本改成
-「把 src 复制到 lib」即可，其余规则（package.json、目录、ESM、发布）一模一样。
-
-但**推荐 TypeScript**，理由只有一条：**类型对得上，基本就不会错。**
-
-- 宿主的 `api` 是个对象，方法名、参数顺序全靠记；TS 能在编辑器里当场标红
-- `npm run check`（`tsc --noEmit`）可以当 lint 用，改完跑一遍就知道有没有碰坏
-- 编译顺手把注释、旧语法去掉，发出去的是干净 JS，也不用担心源码和产物混在一起
-- 代价只有两个 devDependency（`typescript`、`@types/node`）和一个 build 步骤，CI 里自动跑
-
-所以判断标准不是「必须 TS」，而是：**你愿意多写几个类型标注，换「编译过 = 能跑」。**
-
-## 2. 仓库结构
-
-```
-repo/
-├─ .github/workflows/release.yml   # 模板自带：按版本变化构建 + 发 Release + 回写 artifact
-├─ scripts/release.mjs             # 模板自带：上面那个 workflow 调它
-└─ modules/<name>/
-   ├─ package.json                 # 唯一清单（name / version / aurabot 段）
-   ├─ build.mjs                    # 先编后台，再编面板并包成函数体
-   ├─ tsconfig.json                # 后台：NodeNext，outDir=lib，rootDir=src
-   ├─ tsconfig.client.json         # 面板：outDir=dist，rootDir=client
-   ├─ src/index.ts                 # 入口，默认导出插件对象
-   ├─ client/panel.ts              # 可选面板源码 → dist/panel.js
-   ├─ test/*.test.mjs              # 不进发布包
-   ├─ README.md
-   └─ LICENSE
-```
-
-一个仓库可以放多个模块，各自有 `package.json`、各自发版。
-
-## 3. package.json 是唯一清单
+package.json 示例：
 
 ```json
 {
-  "name": "voice-song",
+  "name": "hello",
   "version": "1.0.0",
   "type": "module",
   "main": "lib/index.js",
-  "description": "一句话说明（市场搜索用这个字段）",
+  "description": "在当前会话回复一条问候",
   "license": "MIT",
-  "author": "你的名字",
   "aurabot": {
-    "displayName": "语音点歌",
-    "panel": "./dist/panel.js",
-    "category": "social",
-    "capabilities": ["filesystem", "network", "process"],
-    "minPluginVersion": "1.2.0",
-    "api": 1,
-    "requires": [],
-    "artifact": { "url": "https://…zip", "sha256": "64 位小写十六进制", "size": 12345 }
+    "api": 2,
+    "displayName": "打招呼",
+    "category": "tool",
+    "platforms": ["*"],
+    "capabilities": []
   }
 }
 ```
 
-- `name` 只写包名本身（小写字母/数字/`-`），**不要加用户名前缀、不要带 @**；市场用仓库 owner 拼成 `owner/name`
-- `type` 必须是 `module`：只支持 ESM，CJS 会被拒
-- `category` 单选：platform / social / creative / desktop / manage / tool
-- `capabilities` 如实声明：network / filesystem / process / dynamic-code / plugin-config / plugin-internals
-- 没有 tags 字段，搜索走 `description`
-- `panel` 缺省 `./dist/panel.js`，必须 `./` 开头、`.js` 结尾
-- `artifact` 由 CI 回写，**不要手改**
+有自定义面板时设置 aurabot.panel 为 "./dist/panel.js"。适配器声明 aurabot.kind 为 "adapter"，并列出实际支持的平台。服务插件声明 kind 为 "service"。逐项声明实际使用的 capabilities。具名导出 reusable = true 表示支持多个独立配置实例。
 
-## 4. 入口长什么样
+在 src/index.ts 静态声明配置。让框架管理插件总开关。连接、定时器和处理器的注册都放在 apply 中，便于用户先配置再启用。
 
 ```ts
-export default {
-  id: 'voice-song',
-  name: '语音点歌',
-  version: '1.0.0',
-  api: 1,
-  description: '点歌：搜原唱、下载、抽成语音条发出去',
-  panel: './dist/panel.js',
-  defaults: { enabled: true },
-  settings: [{ key: 'enabled', label: '总开关', type: 'switch', hint: '关掉后不再提供工具' }],
+import { Schema, type Ctx } from '@aurabot/plugin-api'
 
-  setup(api) {
-    // 给模型用的工具：builder 返回单个工具对象（也接受数组）
-    api.tool(({ chat }) => {
-      if (!chat || chat.kind === 'system') return []
-      return api.defineTool({
-        name: 'voice_song_search',
-        description: '按歌名搜候选',
-        properties: { song: { type: 'string', description: '歌名，可带歌手' } },
-        required: ['song'],
-        execute: async (args) => ({ ok: true, message: '搜到 ' + args.song }),
-      })
-    })
+export const name = 'hello'
+export const config = Schema.object({
+  greeting: Schema.string().default('你好').description('问候语'),
+})
 
-    // 给面板用的路由（不经过网络，面板里 call('/status') 直接调）
-    api.route('/status', () => ({ ok: true, ready: true }))
-  },
+export function apply(ctx: Ctx) {
+  ctx.command('hello').description('在当前会话打招呼')
+    .action(({ session }) => session.send(ctx.config.greeting))
 }
 ```
 
-按需求挑 API：
+## 按功能选接口
 
-| 想做的事 | 用哪个 |
-| --- | --- |
-| 给 AI 一个工具 | `api.tool(builder)` + `api.defineTool({ name, description, properties, required, execute })` |
-| 加独立指令（不吃算力） | `api.on('message', ...)` 自己判断前缀，或宿主提供的命令注册 |
-| 给面板拿数据 | `api.route('/xxx', handler)` |
-| 发消息 / 发语音 | `api.sendSegments(chatId, segments)`、`api.sendVoiceFile(chatId, file)` |
-| 存文件 | `api.dataDir(...)`，不要写进模块目录 |
-| 读配置 | `api.settings()`；面板里改过的值都在这里 |
-| 拦截/补充提示词 | `api.rule(fn)` |
+- 注册用户指令用 ctx.command(...).description(...).action(...)。给当前会话发文字或媒体用 session.send(...)，媒体元素由 SDK 的 h 构造。需要后续输入时可使用 session.prompt 或 session.promptMessage。
+- 处理普通消息用 ctx.middleware(async (session, next) => { ... })。无需处理的消息继续执行 next()。按 session.platform、session.bot 和 session.target 区分平台和账号。
+- 给模型增加工具用 ctx.tool({ name, description, parameters, execute })。parameters 写 JSON Schema，execute 返回模型可读的结果。模型选择调用工具，用户输入指令则由 command 处理。
+- 调用模型使用 ctx.llm 上对应服务。图片、视频分别使用 ctx.llm.generateImage、ctx.llm.generateVideo。读取可选能力前先检查它是否可用。
+- 给自定义面板提供数据用 ctx.server.get 或 ctx.server.post。运行期间取当前配置用 ctx.config。注册定时任务、监听和清理用 ctx.setTimeout、ctx.setInterval、ctx.on、ctx.effect。
+- 仅配置字段通常只需导出 config。Schema.string、number、boolean、union、array 和 object 描述字段类型，default 设默认值，description 写用途。表格可用 Schema.array(Schema.object({...})).role('table')。
+- 需要专门界面时，在 client/panel.ts 导出命名函数 export default function Panel(props)。使用宿主注入的 React、h、ui 和 call，由模板的 build.mjs 生成面板函数体。停用时仍可显示配置，依赖运行中服务的操作应显示不可用原因。
 
-## 5. 从零写一个插件（以「语音点歌」为例）
+## 本机检查与发布
 
-1. **找参照**：先看 `modules/playmusic`（搜索 + 下载 + 发语音，最接近）
-   和 `modules/tell-owner`（工具 + 面板路由 + 设置 + 本地存储）。
-   只要骨架就看模板仓库的 `modules/hello`（一个工具）和 `modules/ping`（一个面板路由）。
-2. **建目录**：`modules/voice-song/`，复制参照模块的 `package.json`、`tsconfig*.json`、`build.mjs`。
-3. **改清单**：`name` 改成 `voice-song`，`version` 从 `1.0.0` 开始，`description` 写清「做什么 + 不需要什么」，
-   `aurabot.category` 选 `social`，`capabilities` 按真实用到的写。
-4. **写后台**：`src/index.ts` 导出插件对象，`setup(api)` 里注册工具/路由；
-   业务逻辑拆到 `src/` 下的子目录（`src/providers/`、`src/utils/`），入口只做接线。
-5. **写面板**（可选）：`client/panel.ts`，`export default function Panel(props)`；
-   `React` / `h` / `ui` / `call` 由宿主注入，用 `declare const` 声明，不要 import。
-6. **跑起来**：`npm install` → `npm run build` → `npm test`。
-   `lib/` 和 `dist/` 都是产物，不进仓库。
-7. **发版**：push 到默认分支；Actions 发现版本变了就打包发 Release，并把 `artifact` 回写进 `package.json`。
-8. **收进市场**：把浏览器里这个文件的链接（`https://github.com/<你>/<仓库>/blob/main/modules/voice-song/package.json`）
-   加进市场仓库的 `registry.jsonl`，一行一个。
+1. 在模板模块目录中按其 package.json 安装依赖，执行 npm run check、npm run build 和该插件的 npm test。确认 main、panel 指向的构建产物实际存在。
+2. 把 package.json、lib/、可选的 dist/ 和资源放进「已安装」显示的 modules/<id>/。在控制台重新检查，在停用状态修改并保存配置，然后启用插件。
+3. 在聊天沙盒验证实际消息、指令或工具调用，检查日志。停用后再发送一次，确认处理器已随实例卸载。多平台插件应验证相同会话 ID 在不同账号间的隔离。
+4. 发布前递增 package.json 的 version。从同一提交构建发行 ZIP。发布脚本生成 aurabot.artifact 的下载地址、字节数和 SHA-256，并回写发布清单。已发布包有内容变化时发布新版本。
+5. 将模块 package.json 的 GitHub 页面地址加入市场仓的 registry.jsonl。核对构建报告、下载实际 ZIP，确认其根 package.json 的 name、version 和 aurabot.api 与市场一致。最后从干净环境走一遍安装。
 
-## 6. 面板（前端）怎么写
-
-```ts
-declare const React: any
-declare const h: any
-declare const ui: any
-declare const call: (path: string, body?: any) => Promise<any>
-
-interface PanelProps { toast(message: string, kind?: string): void }
-
-export default function Panel(props: PanelProps) {
-  const [info, setInfo] = React.useState(null)
-  React.useEffect(() => { call('/status').then(setInfo).catch((e) => props.toast(e.message, 'err')) }, [])
-  return h(ui.Card, { title: '状态' }, h('pre', null, JSON.stringify(info, null, 2)))
-}
-```
-
-- 文件内容最终要变成「函数体 + return」，所以**必须**是 `export default function Panel(props) {...}` 这一种写法；
-  `build.mjs` 会把 `export default function` 换成 `return function`，写成箭头函数或 `export default Panel` 会构建失败
-- `React` 不是依赖，是宿主注入的全局；`h` 是 `React.createElement` 的简写；`ui` 是宿主的组件库
-- 面板只做展示和设置，重活放后台，通过 `api.route` 暴露
-
-## 7. 构建、测试、环境
-
-```bash
-cd modules/<name>
-npm install        # 只装 typescript 和 @types/node
-npm run build      # src → lib，client → dist
-npm run check      # tsc --noEmit（两个 tsconfig 都查）
-npm test           # node --test
-```
-
-- Node 22+，npm 即可；不需要全局装 TypeScript
-- 运行时依赖（ffmpeg、ffprobe 这类）**不能**塞进 zip：在 README 写清怎么装，
-  再在 `/status` 路由里暴露「有没有找到」，面板上提示
-- 第三方 npm 库要么构建期 bundle 进 `lib/`，要么别用；宿主不会替你 `npm install`
-- 测试不要联网：把 `global.fetch` 打桩，断言解析/拼装逻辑
-
-## 8. 收进市场
-
-市场仓库的 `registry.jsonl` 一行一个链接，写浏览器里能点开的 GitHub 页面地址就行：
-
-```
-# 注释行以 # 开头，空行忽略，重复的只收一次
-https://github.com/shangxueink/dsh-aurabot-qq-market-dev-plugins/blob/main/modules/playmusic/package.json
-```
-
-市场构建会读这个文件、校验清单、生成 `market.json`。链接原样保留，不会改写成别的域名。
-
-## 9. 常见坑
-
-| 现象 | 原因 |
-| --- | --- |
-| 市场报「缺 aurabot.artifact」 | 还没跑过 CI，或者版本没变所以没重新构建 |
-| 市场报「name 只写包名本身」 | 写了 `用户名/包名` 或带了 `@` |
-| 面板空白 / 加载失败 | `dist/panel.js` 不是「函数体 + return」，多半是面板没按 `export default function` 写 |
-| 构建后找不到入口 | `main` 和 `tsconfig.outDir` 对不上（默认应是 `lib/index.js` 对 `lib`） |
-| 运行时报 `Cannot find package` | 用了运行时依赖；改成构建期 bundle |
-
-## 10. 不要做的事
-
-- 不要手写 `module.json`（旧格式，新插件不需要）
-- 不要提交 `lib/`、`dist/`、`node_modules/`、`.aurabot/`
-- 不要在运行时 `npm install`
-- 不要混淆代码、不要在运行时下载并执行远程代码
+完整接口 https://aureth-labs.github.io/dsh-aurabot-qq-docs/reference/plugin-api
+开发模板 https://github.com/aureth-labs/dsh-aurabot-qq-plugins-template
+市场收录 https://github.com/aureth-labs/dsh-aurabot-qq-market-dev
